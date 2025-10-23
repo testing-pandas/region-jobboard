@@ -45,6 +45,20 @@ const SITE_BASE_PARTS = (() => {
   }
 })();
 
+const CITY_BASE_DOMAIN = String(process.env.CITY_BASE_DOMAIN || '')
+  .trim()
+  .replace(/^https?:\/\//i, '')
+  .replace(/:\d+$/, '')
+  .split('/')[0] || '';
+const CITY_PROTOCOL = (() => {
+  const raw = process.env.CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:';
+  return raw.endsWith(':') ? raw : `${raw}:`;
+})();
+const CITY_EXTRA_HOSTS = (process.env.CITY_EXTRA_HOSTS || '')
+  .split(',')
+  .map(s => s.trim().toLowerCase())
+  .filter(Boolean);
+
 const CITY_SUBDOMAINS = {
   london: {
     label: 'London',
@@ -529,12 +543,22 @@ function canonical(path = '', baseUrl = SITE_URL) {
   return `${base}${p.startsWith('/') ? '' : '/'}${p}`;
 }
 
+function ensureAbsoluteUrl(url = '', protocol = SITE_BASE_PARTS.protocol || 'https:') {
+  const out = String(url || '').trim();
+  if (!out) return '';
+  if (/^https?:\/\//i.test(out)) return out;
+  const proto = String(protocol || 'https:');
+  const normalizedProto = proto.endsWith(':') ? proto.slice(0, -1) : proto;
+  return `${normalizedProto}://${out.replace(/^\/+/, '')}`;
+}
+
 function getCityLinkEntries() {
   const entries = [];
-  entries.push({ slug: null, label: 'All Regions', url: canonical('/', SITE_URL) });
+  const rootUrl = ensureAbsoluteUrl(canonical('/', SITE_URL));
+  entries.push({ slug: null, label: 'All Regions', url: rootUrl });
   for (const entry of Object.values(CITY_SUBDOMAINS)) {
     if (!entry || !entry.siteUrl) continue;
-    const url = canonical('/', entry.siteUrl);
+    const url = ensureAbsoluteUrl(canonical('/', entry.siteUrl), CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:');
     entries.push({ slug: entry.slug, label: entry.label, url });
   }
   const seen = new Set();
