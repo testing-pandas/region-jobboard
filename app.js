@@ -144,7 +144,7 @@ function configureCityMappings() {
     const protocol = SITE_BASE_PARTS.protocol || 'https:';
     if (derivedHost) hostCandidates.add(derivedHost);
     if (SITE_BASE_PARTS.baseHost) hostCandidates.add(`${slug}.${SITE_BASE_PARTS.baseHost}`);
-    hostCandidates.add(`${slug}.region-jobboard-production.up.railway.app`);
+    hostCandidates.add(`${slug}.jobbyu.online`);
     hostCandidates.add(`${slug}.127.0.0.1`);
 
     const extraHostEnv = process.env.CITY_EXTRA_HOSTS || '';
