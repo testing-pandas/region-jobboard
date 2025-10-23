@@ -1319,6 +1319,7 @@ function layout({ title, body, metaExtra = '', breadcrumbs = null, cityCtx = nul
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>${title ? `${escapeHtml(title)} · ` : ''}${escapeHtml(displaySiteName)}</title>
 <meta name="description" content="${metaDescription}"/>
+<meta name="robots" content="noindex, nofollow"/>
 <link rel="canonical" href="${canonicalUrl}"/>
 ${faviconHtml}
 <link rel="alternate" type="application/rss+xml" title="RSS Feed" href="${canonical('/feed.xml', activeSiteUrl)}"/>
