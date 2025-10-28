@@ -1269,9 +1269,8 @@ function layout({ title, body, metaExtra = '', breadcrumbs = null, cityCtx = nul
   const metaDescription = cityCtx
     ? `Find roles in ${escapeHtml(cityCtx.label)} at ${escapeHtml(SITE_NAME)}`
     : `Explore opportunities at ${escapeHtml(SITE_NAME)}`;
-  const titleMeta = cityCtx
-    ? `${escapeHtml(cityCtx.label)} Jobs | ${escapeHtml(SITE_NAME)}`
-    : `Latest Jobs | ${escapeHtml(SITE_NAME)}`;
+  const baseTitle = title || (cityCtx ? `${cityCtx.label} Jobs` : 'Latest Jobs');
+  const titleMeta = `${escapeHtml(baseTitle)} | ${escapeHtml(SITE_NAME)}`;
 
   const cityLinkEntries = getCityLinkEntries();
   const cityLinksHtml = cityLinkEntries
@@ -1351,7 +1350,7 @@ function layout({ title, body, metaExtra = '', breadcrumbs = null, cityCtx = nul
 </script>
 `;
 
-  const siteHeadingHtml = includeSiteHeading ? `<h1 class="site-heading">${escapeHtml(TARGET_PROFESSION)} Jobs</h1>` : '';
+  const siteHeadingHtml = includeSiteHeading ? `<h1 class="site-heading">${escapeHtml(cityCtx.label)} Jobs</h1>` : '';
 
   return `
 <!doctype html>
@@ -1359,7 +1358,7 @@ function layout({ title, body, metaExtra = '', breadcrumbs = null, cityCtx = nul
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>${escapeHtml(titleMeta)}</title>
+<title>${titleMeta}</title>
 <meta name="description" content="${metaDescription}"/>
 <meta name="robots" content="noindex, nofollow"/>
 <link rel="canonical" href="${canonicalUrl}"/>
@@ -1382,7 +1381,7 @@ ${metaExtra}
 </head>
 <body>
 <header class="wrap">
-  <span class="h1"><a href="/">${escapeHtml(displaySiteName)}</a></span>
+  <span class="h1"><a href="/">${escapeHtml(SITE_NAME)}</a></span>
   <nav>
     <a href="/post-job" class="btn btn-primary">Post a Job</a>
     <a href="/tags">Tags</a>
@@ -1895,14 +1894,14 @@ app.get('/tag/:slug', (req, res) => {
   ];
 
   const layoutTitle = cityCtx
-    ? `Tag: ${tag.name} Jobs in ${cityCtx.label}`
-    : `Tag: ${tag.name} Jobs`;
+    ? `${tag.name} Jobs in ${cityCtx.label}`
+    : `${tag.name} Jobs`;
 
   res.send(layout({
     title: layoutTitle,
     body: `
 <nav class="muted small"><a href="/">Home</a> › <a href="/tags">Tags</a> › ${escapeHtml(tag.name)}</nav>
-<h1>${escapeHtml(tag.name)} Jobs</h1>
+<h1>${escapeHtml(tag.name)} Jobs in ${escapeHtml(cityCtx.label)}</h1>
 <p class="muted">${cnt} jobs</p>
 <ul class="list">${items || '<li class="card">No jobs yet.</li>'}</ul>
 ${pager}
