@@ -1348,7 +1348,7 @@ function layout({ title, body, metaExtra = '', breadcrumbs = null, cityCtx = nul
 </script>
 `;
 
-  const siteHeadingHtml = includeSiteHeading ? `<h1 class="site-heading">${escapeHtml(TARGET_PROFESSION)}</h1>` : '';
+  const siteHeadingHtml = includeSiteHeading ? `<h1 class="site-heading">${escapeHtml(TARGET_PROFESSION)} Jobs</h1>` : '';
 
   return `
 <!doctype html>
