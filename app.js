@@ -1447,6 +1447,7 @@ app.get('/', (req, res) => {
   const cityCtx = res.locals.cityCtx;
   const activeSiteUrl = ensureAbsoluteUrl(res.locals.activeSiteUrl || MAIN_SITE_URL, CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:');
   const siteDisplayName = res.locals.siteDisplayName || SITE_NAME;
+  const siteDisplayName = res.locals.siteDisplayName || SITE_NAME;
   const pageSize = 50;
   const cursor = req.query.cursor || '';
   let rows;
@@ -1895,7 +1896,7 @@ app.get('/tag/:slug', (req, res) => {
     title: `Tag: ${tag.name}`,
     body: `
 <nav class="muted small"><a href="/">Home</a> › <a href="/tags">Tags</a> › ${escapeHtml(tag.name)}</nav>
-<h1>Tag: ${escapeHtml(tag.name)} Jobs ${escapeHtml(displaySiteName)}</h1>
+<h1>Tag: ${escapeHtml(tag.name)} Jobs · ${escapeHtml(siteDisplayName)}</h1>
 <p class="muted">${cnt} jobs</p>
 <ul class="list">${items || '<li class="card">No jobs yet.</li>'}</ul>
 ${pager}
