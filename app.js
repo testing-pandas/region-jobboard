@@ -1267,8 +1267,11 @@ function layout({ title, body, metaExtra = '', breadcrumbs = null, cityCtx = nul
   const canonicalTarget = breadcrumbs ? breadcrumbs[breadcrumbs.length - 1].url : '/';
   const canonicalUrl = ensureAbsoluteUrl(canonical(canonicalTarget, activeSiteUrl), CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:');
   const metaDescription = cityCtx
-    ? `Find roles in ${escapeHtml(cityCtx.label)} at ${escapeHtml(displaySiteName)}`
-    : `Explore opportunities at ${escapeHtml(displaySiteName)}`;
+    ? `Find roles in ${escapeHtml(cityCtx.label)} at ${escapeHtml(SITE_NAME)}`
+    : `Explore opportunities at ${escapeHtml(SITE_NAME)}`;
+  const titleMeta = cityCtx
+    ? `${escapeHtml(cityCtx.label)} Jobs | ${escapeHtml(SITE_NAME)}`
+    : `Latest Jobs | ${escapeHtml(SITE_NAME)}`;
 
   const cityLinkEntries = getCityLinkEntries();
   const cityLinksHtml = cityLinkEntries
@@ -1356,7 +1359,7 @@ function layout({ title, body, metaExtra = '', breadcrumbs = null, cityCtx = nul
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>${title ? `${escapeHtml(title)} · ` : ''}${escapeHtml(displaySiteName)}</title>
+<title>${escapeHtml(titleMeta)}</title>
 <meta name="description" content="${metaDescription}"/>
 <meta name="robots" content="noindex, nofollow"/>
 <link rel="canonical" href="${canonicalUrl}"/>
@@ -1529,13 +1532,12 @@ app.get('/', (req, res) => {
     }
   })}</script>`;
 
-  const pageTitle = cityCtx ? `${cityCtx.label} jobs` : 'Latest Jobs';
   const countLabel = cityCtx
     ? `${escapeHtml(cityCtx.label)} roles`
     : 'Latest roles';
 
   res.send(layout({
-    title: pageTitle,
+    title: cityCtx ? `${cityCtx.label} Jobs` : 'Latest Jobs',
     body: `
 <section class="card search-form">
   <form method="GET" action="/search">
@@ -1892,11 +1894,15 @@ app.get('/tag/:slug', (req, res) => {
     { name: tag.name, url: `/tag/${slug}` }
   ];
 
+  const layoutTitle = cityCtx
+    ? `Tag: ${tag.name} Jobs in ${cityCtx.label}`
+    : `Tag: ${tag.name} Jobs`;
+
   res.send(layout({
-    title: `Tag: ${tag.name}`,
+    title: layoutTitle,
     body: `
 <nav class="muted small"><a href="/">Home</a> › <a href="/tags">Tags</a> › ${escapeHtml(tag.name)}</nav>
-<h1>Tag: ${escapeHtml(tag.name)} Jobs · ${escapeHtml(siteDisplayName)}</h1>
+<h1>${escapeHtml(tag.name)} Jobs</h1>
 <p class="muted">${cnt} jobs</p>
 <ul class="list">${items || '<li class="card">No jobs yet.</li>'}</ul>
 ${pager}
@@ -1931,7 +1937,7 @@ app.get('/tags', (req, res) => {
 <p class="muted">No tags yet.</p>
 `;
 
-  res.send(layout({ title: 'Tags', body, breadcrumbs, cityCtx, siteUrlOverride: activeSiteUrl }));
+  res.send(layout({ title: cityCtx ? `Tags in ${cityCtx.label}` : 'Tags', body, breadcrumbs, cityCtx, siteUrlOverride: activeSiteUrl }));
 });
 
 // ======= JOB PAGE (JSON-LD fixed) =======
