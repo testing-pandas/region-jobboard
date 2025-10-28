@@ -26,6 +26,7 @@ const HAS_OPENAI = !!process.env.OPENAI_API_KEY;
 const CLICK_SECRET = process.env.CLICK_SECRET || crypto.randomBytes(16).toString('hex');
 const TARGET_PROFESSION = process.env.TARGET_PROFESSION || 'warehouse';
 const AI_PROCESS_LIMIT = Number(process.env.AI_PROCESS_LIMIT || 0); // 0 = unlimited
+const CLARITY_ID = process.env.CLARITY_ID || 'tx6wzu0c05';
 
 // Keywords for profession matching (lowercase)
 const PROFESSION_KEYWORDS = (process.env.PROFESSION_KEYWORDS || 'Warehouse, Warehouse Worker, Warehouse Associate, Warehouse Operative, General Laborer, Stocker, Picker, Packer, Order Picker, Loader, Unloader, Dock Worker, Forklift Operator, Lift Truck Operator, Material Handler, Shipping Clerk, Receiving Clerk, Inventory Control Specialist, Warehouse Supervisor, Warehouse Manager, Logistics Associate')
@@ -1131,6 +1132,7 @@ nav a:hover { color: var(--primary); background: var(--bg); }
 .search-form { margin: 24px 0; }
 .search-form input[type="search"] { width: 100%; max-width: 500px; padding: 12px 16px; border: 2px solid var(--border); border-radius: 8px; font-size: 16px; transition: all 0.2s; }
 .search-form input[type="search"]:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+.site-heading { margin: 16px 0 12px 0; font-size: 28px; font-weight: 700; color: var(--text); }
 .pager { display: flex; gap: 12px; margin: 24px 0; flex-wrap: wrap; }
 .pager a, .pager .current { padding: 8px 16px; background: var(--card); border-radius: 8px; color: var(--text); text-decoration: none; box-shadow: var(--shadow); border: 1px solid var(--border); transition: all 0.2s; }
 .pager a:hover { background: var(--primary); color: white; border-color: var(--primary); }
@@ -1255,15 +1257,15 @@ footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border
 // ========================================
 // HTML LAYOUT FUNCTION (with cookie banner)
 // ========================================
-function layout({ title, body, metaExtra = '', breadcrumbs = null, cityCtx = null, siteUrlOverride = null }) {
+function layout({ title, body, metaExtra = '', breadcrumbs = null, cityCtx = null, siteUrlOverride = null, includeSiteHeading = false }) {
   const activeSiteUrl = siteUrlOverride || cityCtx?.siteUrl || SITE_URL;
   const displaySiteName = cityCtx ? `${cityCtx.label} ${SITE_NAME}` : SITE_NAME;
   const faviconHtml = FAVICON_URL ? `<link rel="icon" href="${escapeHtml(FAVICON_URL)}"/>` : '';
   const canonicalTarget = breadcrumbs ? breadcrumbs[breadcrumbs.length - 1].url : '/';
   const canonicalUrl = canonical(canonicalTarget, activeSiteUrl);
   const metaDescription = cityCtx
-    ? `Find ${escapeHtml(TARGET_PROFESSION)} jobs in ${escapeHtml(cityCtx.label)} at ${escapeHtml(displaySiteName)}`
-    : `Find ${escapeHtml(TARGET_PROFESSION)} jobs and career opportunities at ${escapeHtml(displaySiteName)}`;
+    ? `Find roles in ${escapeHtml(cityCtx.label)} at ${escapeHtml(displaySiteName)}`
+    : `Explore opportunities at ${escapeHtml(displaySiteName)}`;
 
   const cityLinkEntries = getCityLinkEntries();
   const cityLinksHtml = cityLinkEntries
@@ -1276,6 +1278,14 @@ function layout({ title, body, metaExtra = '', breadcrumbs = null, cityCtx = nul
   const cityMenuHtml = cityLinkEntries.length > 1
     ? `<details class="city-switcher"><summary>All cities</summary><div class="city-switcher__menu">${cityLinksHtml}</div></details>`
     : '';
+  const clarityScript = CLARITY_ID ? `
+<script type="text/javascript">
+  (function(c,l,a,r,i,t,y){
+    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+  })(window, document, "clarity", "script", "${CLARITY_ID}");
+</script>` : '';
 
   // Breadcrumb JSON-LD (if provided)
   let breadcrumbSchema = '';
@@ -1335,6 +1345,8 @@ function layout({ title, body, metaExtra = '', breadcrumbs = null, cityCtx = nul
 </script>
 `;
 
+  const siteHeadingHtml = includeSiteHeading ? `<h1 class="site-heading">${escapeHtml(displaySiteName)}</h1>` : '';
+
   return `
 <!doctype html>
 <html lang="${TARGET_LANG}">
@@ -1349,14 +1361,15 @@ ${faviconHtml}
 <link rel="alternate" type="application/rss+xml" title="RSS Feed" href="${canonical('/feed.xml', activeSiteUrl)}"/>
 <!-- Open Graph -->
 <meta property="og:title" content="${escapeHtml(title || displaySiteName)}"/>
-<meta property="og:description" content="${cityCtx ? `Find ${escapeHtml(TARGET_PROFESSION)} jobs in ${escapeHtml(cityCtx.label)}` : `Find ${escapeHtml(TARGET_PROFESSION)} jobs and career opportunities` }"/>
+<meta property="og:description" content="${cityCtx ? `Find roles in ${escapeHtml(cityCtx.label)}` : `Explore opportunities at ${escapeHtml(displaySiteName)}` }"/>
 <meta property="og:url" content="${canonicalUrl}"/>
 <meta property="og:type" content="website"/>
 ${SITE_LOGO ? `<meta property="og:image" content="${escapeHtml(SITE_LOGO)}"/>` : ''}
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="${escapeHtml(title || displaySiteName)}"/>
-<meta name="twitter:description" content="${cityCtx ? `Find ${escapeHtml(TARGET_PROFESSION)} jobs in ${escapeHtml(cityCtx.label)}` : `Find ${escapeHtml(TARGET_PROFESSION)} jobs`}"/>
+<meta name="twitter:description" content="${cityCtx ? `Find roles in ${escapeHtml(cityCtx.label)}` : `Explore opportunities at ${escapeHtml(displaySiteName)}`}"/>
+${clarityScript}
 <style>${baseCss}</style>
 ${breadcrumbSchema}
 ${metaExtra}
@@ -1375,10 +1388,11 @@ ${metaExtra}
   </nav>
 </header>
 <main class="wrap">
+${siteHeadingHtml}
 ${body}
 </main>
 <footer class="wrap">
-  <p class="muted small">© ${new Date().getFullYear()} ${escapeHtml(displaySiteName)} · ${escapeHtml(TARGET_PROFESSION)} positions · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/cookies">Cookies</a></p>
+  <p class="muted small">© ${new Date().getFullYear()} ${escapeHtml(displaySiteName)} · Part of ${escapeHtml(SITE_NAME)} · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/cookies">Cookies</a></p>
 </footer>
 ${cookieBanner}
 </body>
@@ -1512,10 +1526,9 @@ app.get('/', (req, res) => {
   })}</script>`;
 
   const pageTitle = cityCtx ? `${cityCtx.label} jobs` : 'Latest Jobs';
-  const heading = siteDisplayName;
   const countLabel = cityCtx
-    ? `${escapeHtml(cityCtx.label)} ${escapeHtml(TARGET_PROFESSION)} roles`
-    : `${escapeHtml(TARGET_PROFESSION)} roles`;
+    ? `${escapeHtml(cityCtx.label)} roles`
+    : 'Latest roles';
 
   res.send(layout({
     title: pageTitle,
@@ -1527,7 +1540,7 @@ app.get('/', (req, res) => {
     <button type="submit" class="btn" style="margin-top:12px">Search</button>
   </form>
 </section>
-<p class="muted">Showing ${countLabel} · ${total.toLocaleString('en-US')} jobs total</p>
+  <p class="muted">Showing ${countLabel} · ${total.toLocaleString('en-US')} jobs total</p>
 ${cityLinksCard}
 ${tagsBlock}
 <ul class="list">${items || '<li class="card">No jobs yet. Visit /fetch to import.</li>'}</ul>
@@ -1535,7 +1548,8 @@ ${pager}
 `,
     metaExtra: orgSchema + websiteSchema,
     cityCtx,
-    siteUrlOverride: activeSiteUrl
+    siteUrlOverride: activeSiteUrl,
+    includeSiteHeading: true
   }));
 });
 
@@ -1772,7 +1786,7 @@ app.get('/rules', (req, res) => {
     "@context": "https://schema.org",
     "@type": "FAQPage",
     "mainEntity": [
-      { "@type": "Question", "name": "How do I post a job?", "acceptedAnswer": { "@type": "Answer", "text": `Click the "Post a Job" button in the header and fill out the form. All ${TARGET_PROFESSION} positions are welcome.` } },
+      { "@type": "Question", "name": "How do I post a job?", "acceptedAnswer": { "@type": "Answer", "text": `Click the "Post a Job" button in the header and fill out the form. ${SITE_NAME} welcomes a wide range of roles.` } },
       { "@type": "Question", "name": "Is posting jobs free?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, posting jobs is completely free on our platform." } },
       { "@type": "Question", "name": "How long do jobs stay posted?", "acceptedAnswer": { "@type": "Answer", "text": "Jobs remain active for 30 days and are included in our sitemap and RSS feed." } }
     ]
@@ -1795,14 +1809,14 @@ app.get('/rules', (req, res) => {
   <h1>Rules & FAQ</h1>
   <h2>Posting Guidelines</h2>
   <ul>
-    <li>Only ${escapeHtml(TARGET_PROFESSION)} positions should be posted</li>
+    <li>Only job opportunities appropriate for ${escapeHtml(SITE_NAME)} should be posted</li>
     <li>All job postings must be legitimate opportunities</li>
     <li>Provide accurate company information and application URLs</li>
     <li>No discriminatory content or requirements</li>
   </ul>
   <h2>Frequently Asked Questions</h2>
   <h3>How do I post a job?</h3>
-  <p>Click the "Post a Job" button in the header and fill out the form. All ${escapeHtml(TARGET_PROFESSION)} positions are welcome.</p>
+  <p>Click the "Post a Job" button in the header and fill out the form. ${escapeHtml(SITE_NAME)} welcomes a wide range of roles.</p>
   <h3>Is posting jobs free?</h3>
   <p>Yes, posting jobs is completely free on our platform.</p>
   <h3>How long do jobs stay posted?</h3>
@@ -1877,7 +1891,7 @@ app.get('/tag/:slug', (req, res) => {
     title: `Tag: ${tag.name}`,
     body: `
 <nav class="muted small"><a href="/">Home</a> › <a href="/tags">Tags</a> › ${escapeHtml(tag.name)}</nav>
-<h1>Tag: ${escapeHtml(tag.name)}</h1>
+<h1>Tag: ${escapeHtml(tag.name)} Jobs ${escapeHtml(displaySiteName)}</h1>
 <p class="muted">${cnt} jobs</p>
 <ul class="list">${items || '<li class="card">No jobs yet.</li>'}</ul>
 ${pager}
@@ -2074,7 +2088,7 @@ app.get('/sitemap.xml', (req, res) => {
     <priority>0.8</priority>
   </url>`).join('');
   res.set('Content-Type', 'application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>${activeSiteUrl}/</loc>
     <changefreq>hourly</changefreq>
@@ -2109,7 +2123,7 @@ app.get('/feed.xml', (req, res) => {
   <channel>
     <title>${escapeHtml(siteDisplayName)}</title>
     <link>${activeSiteUrl}</link>
-    <description>Latest ${escapeHtml(TARGET_PROFESSION.toLowerCase())} job opportunities</description>
+    <description>Latest job opportunities from ${escapeHtml(siteDisplayName)}</description>
     <language>${TARGET_LANG}</language>
     <atom:link href="${canonical('/feed.xml', activeSiteUrl)}" rel="self" type="application/rss+xml"/>
     ${items}
@@ -2179,7 +2193,7 @@ app.get('/terms', (req, res) => {
   <p>By using ${escapeHtml(siteDisplayName)}, you agree to these Terms. If you do not agree, do not use the site.</p>
   <h2>Use of the Service</h2>
   <ul>
-    <li>Post only legitimate ${escapeHtml(TARGET_PROFESSION)} job opportunities</li>
+    <li>Post only legitimate job opportunities that are appropriate for ${escapeHtml(SITE_NAME)}</li>
     <li>Do not post unlawful or discriminatory content</li>
     <li>Do not attempt to disrupt or abuse the service</li>
   </ul>
