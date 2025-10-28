@@ -1258,11 +1258,12 @@ footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border
 // HTML LAYOUT FUNCTION (with cookie banner)
 // ========================================
 function layout({ title, body, metaExtra = '', breadcrumbs = null, cityCtx = null, siteUrlOverride = null, includeSiteHeading = false }) {
-  const activeSiteUrl = siteUrlOverride || cityCtx?.siteUrl || SITE_URL;
+  const activeSiteUrlRaw = siteUrlOverride || cityCtx?.siteUrl || MAIN_SITE_URL;
+  const activeSiteUrl = ensureAbsoluteUrl(activeSiteUrlRaw, CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:').replace(/\/+$/, '');
   const displaySiteName = cityCtx ? `${cityCtx.label} ${SITE_NAME}` : SITE_NAME;
   const faviconHtml = FAVICON_URL ? `<link rel="icon" href="${escapeHtml(FAVICON_URL)}"/>` : '';
   const canonicalTarget = breadcrumbs ? breadcrumbs[breadcrumbs.length - 1].url : '/';
-  const canonicalUrl = canonical(canonicalTarget, activeSiteUrl);
+  const canonicalUrl = ensureAbsoluteUrl(canonical(canonicalTarget, activeSiteUrl), CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:');
   const metaDescription = cityCtx
     ? `Find roles in ${escapeHtml(cityCtx.label)} at ${escapeHtml(displaySiteName)}`
     : `Explore opportunities at ${escapeHtml(displaySiteName)}`;
@@ -1345,7 +1346,7 @@ function layout({ title, body, metaExtra = '', breadcrumbs = null, cityCtx = nul
 </script>
 `;
 
-  const siteHeadingHtml = includeSiteHeading ? `<h1 class="site-heading">${escapeHtml(displaySiteName)}</h1>` : '';
+  const siteHeadingHtml = includeSiteHeading ? `<h1 class="site-heading">${escapeHtml(TARGET_PROFESSION)}</h1>` : '';
 
   return `
 <!doctype html>
@@ -1358,7 +1359,7 @@ function layout({ title, body, metaExtra = '', breadcrumbs = null, cityCtx = nul
 <meta name="robots" content="noindex, nofollow"/>
 <link rel="canonical" href="${canonicalUrl}"/>
 ${faviconHtml}
-<link rel="alternate" type="application/rss+xml" title="RSS Feed" href="${canonical('/feed.xml', activeSiteUrl)}"/>
+<link rel="alternate" type="application/rss+xml" title="RSS Feed" href="${ensureAbsoluteUrl(canonical('/feed.xml', activeSiteUrl), CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:')}"/>
 <!-- Open Graph -->
 <meta property="og:title" content="${escapeHtml(title || displaySiteName)}"/>
 <meta property="og:description" content="${cityCtx ? `Find roles in ${escapeHtml(cityCtx.label)}` : `Explore opportunities at ${escapeHtml(displaySiteName)}` }"/>
@@ -1413,10 +1414,11 @@ app.use((req, res, next) => {
   const cleanHost = hostPrimary.toLowerCase().split(':')[0];
   const cityBase = getCityContextFromHost(cleanHost);
   const protoHeader = req.headers['x-forwarded-proto'];
-  const protocol = protoHeader ? protoHeader.split(',')[0] : (req.protocol || (req.secure ? 'https' : 'http') || 'http');
+  const requestProtocol = protoHeader ? protoHeader.split(',')[0] : (req.protocol || (req.secure ? 'https' : 'http') || 'http');
+  const effectiveProtocol = (CITY_PROTOCOL || requestProtocol).replace(/:+$/, '');
   const activeSiteUrl = cityBase
-    ? `${protocol}://${hostPrimary}`
-    : SITE_URL;
+    ? `${effectiveProtocol}://${hostPrimary}`
+    : ensureAbsoluteUrl(MAIN_SITE_URL, CITY_PROTOCOL || requestProtocol).replace(/\/+$/, '');
   const cityCtx = cityBase
     ? {
         slug: cityBase.slug,
@@ -1441,7 +1443,7 @@ app.get('/healthz', (req, res) => {
 // HOME PAGE with search form
 app.get('/', (req, res) => {
   const cityCtx = res.locals.cityCtx;
-  const activeSiteUrl = res.locals.activeSiteUrl || SITE_URL;
+  const activeSiteUrl = ensureAbsoluteUrl(res.locals.activeSiteUrl || MAIN_SITE_URL, CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:');
   const siteDisplayName = res.locals.siteDisplayName || SITE_NAME;
   const pageSize = 50;
   const cursor = req.query.cursor || '';
@@ -1556,7 +1558,7 @@ ${pager}
 // SEARCH PAGE — set NOINDEX
 app.get('/search', (req, res) => {
   const cityCtx = res.locals.cityCtx;
-  const activeSiteUrl = res.locals.activeSiteUrl || SITE_URL;
+  const activeSiteUrl = ensureAbsoluteUrl(res.locals.activeSiteUrl || MAIN_SITE_URL, CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:');
   const siteDisplayName = res.locals.siteDisplayName || SITE_NAME;
   res.setHeader('X-Robots-Tag', 'noindex, nofollow');
   const q = String(req.query.q || '').trim();
@@ -1602,7 +1604,7 @@ app.get('/search', (req, res) => {
 // POST A JOB (GET - form)
 app.get('/post-job', (req, res) => {
   const cityCtx = res.locals.cityCtx;
-  const activeSiteUrl = res.locals.activeSiteUrl || SITE_URL;
+  const activeSiteUrl = ensureAbsoluteUrl(res.locals.activeSiteUrl || MAIN_SITE_URL, CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:');
   const siteDisplayName = res.locals.siteDisplayName || SITE_NAME;
   res.setHeader('X-Robots-Tag', 'noindex, nofollow');
   const breadcrumbs = [
@@ -1777,7 +1779,7 @@ app.post('/post-job', async (req, res) => {
 app.get('/rules', (req, res) => {
   const cityCtx = res.locals.cityCtx;
   const siteDisplayName = res.locals.siteDisplayName || SITE_NAME;
-  const activeSiteUrl = res.locals.activeSiteUrl || SITE_URL;
+  const activeSiteUrl = ensureAbsoluteUrl(res.locals.activeSiteUrl || MAIN_SITE_URL, CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:');
   const breadcrumbs = [
     { name: 'Home', url: '/' },
     { name: 'Rules', url: '/rules' }
@@ -1841,7 +1843,7 @@ app.get('/tag/:slug', (req, res) => {
   if (!tag) return res.status(404).send('Not found');
 
   const cityCtx = res.locals.cityCtx;
-  const activeSiteUrl = res.locals.activeSiteUrl || SITE_URL;
+  const activeSiteUrl = ensureAbsoluteUrl(res.locals.activeSiteUrl || MAIN_SITE_URL, CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:');
   const pageSize = 50;
   const cursor = req.query.cursor || '';
   let rows;
@@ -1905,7 +1907,7 @@ ${pager}
 // ALL TAGS
 app.get('/tags', (req, res) => {
   const cityCtx = res.locals.cityCtx;
-  const activeSiteUrl = res.locals.activeSiteUrl || SITE_URL;
+  const activeSiteUrl = ensureAbsoluteUrl(res.locals.activeSiteUrl || MAIN_SITE_URL, CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:');
   const popular = cityCtx
     ? stmtPopularTagsByCity.all(cityCtx.slug, 1, 500)
     : stmtPopularTags.all(1, 500);
@@ -1936,7 +1938,7 @@ app.get('/job/:slug', (req, res) => {
 
   const cityCtx = res.locals.cityCtx;
   const siteDisplayName = res.locals.siteDisplayName || SITE_NAME;
-  const activeSiteUrl = res.locals.activeSiteUrl || SITE_URL;
+  const activeSiteUrl = ensureAbsoluteUrl(res.locals.activeSiteUrl || MAIN_SITE_URL, CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:');
   const expectedCity = job.city_slug ? CITY_SUBDOMAINS[job.city_slug] : null;
   if (expectedCity) {
     const requestHost = String(req.headers.host || req.hostname || '').toLowerCase().split(':')[0];
@@ -2064,7 +2066,7 @@ app.get('/go', (_req, res) => {
 
 // robots.txt
 app.get('/robots.txt', (_req, res) => {
-  const activeSiteUrl = res.locals.activeSiteUrl || SITE_URL;
+  const activeSiteUrl = ensureAbsoluteUrl(res.locals.activeSiteUrl || MAIN_SITE_URL, CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:').replace(/\/+$/, '');
   res.type('text/plain').send(`User-agent: *
 Disallow: /go
 Disallow: /post-job
@@ -2076,7 +2078,7 @@ Sitemap: ${activeSiteUrl}/sitemap.xml
 // sitemap.xml
 app.get('/sitemap.xml', (req, res) => {
   const cityCtx = res.locals.cityCtx;
-  const activeSiteUrl = res.locals.activeSiteUrl || SITE_URL;
+  const activeSiteUrl = ensureAbsoluteUrl(res.locals.activeSiteUrl || MAIN_SITE_URL, CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:').replace(/\/+$/, '');
   const recent = cityCtx
     ? stmtRecentByCity.all(cityCtx.slug, 10000)
     : stmtRecent.all(10000);
@@ -2106,7 +2108,7 @@ app.get('/sitemap.xml', (req, res) => {
 // RSS feed
 app.get('/feed.xml', (req, res) => {
   const cityCtx = res.locals.cityCtx;
-  const activeSiteUrl = res.locals.activeSiteUrl || SITE_URL;
+  const activeSiteUrl = ensureAbsoluteUrl(res.locals.activeSiteUrl || MAIN_SITE_URL, CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:');
   const siteDisplayName = res.locals.siteDisplayName || SITE_NAME;
   const recent = cityCtx
     ? stmtRecentByCity.all(cityCtx.slug, 100)
@@ -2139,7 +2141,7 @@ const LAST_UPDATED = new Date().toISOString().slice(0,10); // YYYY-MM-DD
 app.get('/privacy', (req, res) => {
   const cityCtx = res.locals.cityCtx;
   const siteDisplayName = res.locals.siteDisplayName || SITE_NAME;
-  const activeSiteUrl = res.locals.activeSiteUrl || SITE_URL;
+  const activeSiteUrl = ensureAbsoluteUrl(res.locals.activeSiteUrl || MAIN_SITE_URL, CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:');
   const breadcrumbs = [
     { name: 'Home', url: '/' },
     { name: 'Privacy Policy', url: '/privacy' }
@@ -2177,7 +2179,7 @@ app.get('/privacy', (req, res) => {
 app.get('/terms', (req, res) => {
   const cityCtx = res.locals.cityCtx;
   const siteDisplayName = res.locals.siteDisplayName || SITE_NAME;
-  const activeSiteUrl = res.locals.activeSiteUrl || SITE_URL;
+  const activeSiteUrl = ensureAbsoluteUrl(res.locals.activeSiteUrl || MAIN_SITE_URL, CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:');
   const breadcrumbs = [
     { name: 'Home', url: '/' },
     { name: 'Terms of Use', url: '/terms' }
@@ -2216,7 +2218,7 @@ app.get('/terms', (req, res) => {
 app.get('/cookies', (req, res) => {
   const cityCtx = res.locals.cityCtx;
   const siteDisplayName = res.locals.siteDisplayName || SITE_NAME;
-  const activeSiteUrl = res.locals.activeSiteUrl || SITE_URL;
+  const activeSiteUrl = ensureAbsoluteUrl(res.locals.activeSiteUrl || MAIN_SITE_URL, CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:');
   const breadcrumbs = [
     { name: 'Home', url: '/' },
     { name: 'Cookie Policy', url: '/cookies' }
