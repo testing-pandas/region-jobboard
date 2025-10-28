@@ -1446,7 +1446,6 @@ app.get('/healthz', (req, res) => {
 app.get('/', (req, res) => {
   const cityCtx = res.locals.cityCtx;
   const activeSiteUrl = ensureAbsoluteUrl(res.locals.activeSiteUrl || MAIN_SITE_URL, CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:');
-  const siteDisplayName = res.locals.siteDisplayName || SITE_NAME;
   const pageSize = 50;
   const cursor = req.query.cursor || '';
   let rows;
