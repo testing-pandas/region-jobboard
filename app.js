@@ -553,6 +553,8 @@ function ensureAbsoluteUrl(url = '', protocol = SITE_BASE_PARTS.protocol || 'htt
   return `${normalizedProto}://${out.replace(/^\/+/, '')}`;
 }
 
+const MAIN_SITE_URL = ensureAbsoluteUrl(SITE_URL, CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:');
+
 function getCityLinkEntries() {
   const entries = [];
   const rootUrl = ensureAbsoluteUrl(canonical('/', SITE_URL));
