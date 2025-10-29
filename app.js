@@ -1350,7 +1350,8 @@ function layout({ title, body, metaExtra = '', breadcrumbs = null, cityCtx = nul
 </script>
 `;
 
-  const siteHeadingHtml = includeSiteHeading ? `<h1 class="site-heading">${escapeHtml(cityCtx.label)} Jobs</h1>` : '';
+  const headingBase = headingText || (cityCtx && cityCtx.label ? `${cityCtx.label} Jobs` : `${TARGET_COUNTRY} Jobs`);
+  const siteHeadingHtml = includeSiteHeading ? `<h1 class="site-heading">${escapeHtml(headingBase)}</h1>` : '';
 
   return `
 <!doctype html>
