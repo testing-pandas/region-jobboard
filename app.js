@@ -1535,6 +1535,7 @@ app.get('/', (req, res) => {
   const countLabel = cityCtx
     ? `${escapeHtml(cityCtx.label)} roles`
     : 'Latest roles';
+  const headingText = cityCtx && cityCtx.label ? `${cityCtx.label} Jobs` : `${TARGET_COUNTRY} Jobs`;
 
   res.send(layout({
     title: cityCtx ? `${cityCtx.label} Jobs` : 'Latest Jobs',
@@ -1555,7 +1556,8 @@ ${pager}
     metaExtra: orgSchema + websiteSchema,
     cityCtx,
     siteUrlOverride: activeSiteUrl,
-    includeSiteHeading: true
+    includeSiteHeading: true,
+    headingText
   }));
 });
 
