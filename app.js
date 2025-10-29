@@ -1260,7 +1260,7 @@ footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border
 // ========================================
 // HTML LAYOUT FUNCTION (with cookie banner)
 // ========================================
-function layout({ title, body, metaExtra = '', breadcrumbs = null, cityCtx = null, siteUrlOverride = null, includeSiteHeading = false }) {
+function layout({ title, body, metaExtra = '', breadcrumbs = null, cityCtx = null, siteUrlOverride = null, includeSiteHeading = false, headingText = null }) {
   const activeSiteUrlRaw = siteUrlOverride || cityCtx?.siteUrl || MAIN_SITE_URL;
   const activeSiteUrl = ensureAbsoluteUrl(activeSiteUrlRaw, CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:').replace(/\/+$/, '');
   const displaySiteName = cityCtx ? `${cityCtx.label} ${SITE_NAME}` : SITE_NAME;
