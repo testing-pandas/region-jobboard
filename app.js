@@ -1897,7 +1897,10 @@ app.get('/tag/:slug', (req, res) => {
     { name: tag.name, url: `/tag/${slug}` }
   ];
 
-  const layoutTitle = cityCtx
+ const layoutTitle = cityCtx
+   ? `${tag.name} Jobs in ${cityCtx.label}`
+   : `${tag.name} Jobs`;
+  const headingText = cityCtx && cityCtx.label
     ? `${tag.name} Jobs in ${cityCtx.label}`
     : `${tag.name} Jobs`;
 
@@ -1905,14 +1908,15 @@ app.get('/tag/:slug', (req, res) => {
     title: layoutTitle,
     body: `
 <nav class="muted small"><a href="/">Home</a> › <a href="/tags">Tags</a> › ${escapeHtml(tag.name)}</nav>
-<h1>${escapeHtml(tag.name)} Jobs in ${escapeHtml(cityCtx.label)}</h1>
+<h1>${escapeHtml(headingText)}</h1>
 <p class="muted">${cnt} jobs</p>
 <ul class="list">${items || '<li class="card">No jobs yet.</li>'}</ul>
 ${pager}
 `,
     breadcrumbs,
     cityCtx,
-    siteUrlOverride: activeSiteUrl
+    siteUrlOverride: activeSiteUrl,
+    headingText
   }));
 });
 
