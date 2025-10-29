@@ -27,6 +27,7 @@ const CLICK_SECRET = process.env.CLICK_SECRET || crypto.randomBytes(16).toString
 const TARGET_PROFESSION = process.env.TARGET_PROFESSION || 'warehouse';
 const AI_PROCESS_LIMIT = Number(process.env.AI_PROCESS_LIMIT || 0); // 0 = unlimited
 const CLARITY_ID = process.env.CLARITY_ID || 'tx6wzu0c05';
+const TARGET_COUNTRY = process.env.TARGET_COUNTRY || 'United Kingdom';
 
 // Keywords for profession matching (lowercase)
 const PROFESSION_KEYWORDS = (process.env.PROFESSION_KEYWORDS || 'Warehouse, Warehouse Worker, Warehouse Associate, Warehouse Operative, General Laborer, Stocker, Picker, Packer, Order Picker, Loader, Unloader, Dock Worker, Forklift Operator, Lift Truck Operator, Material Handler, Shipping Clerk, Receiving Clerk, Inventory Control Specialist, Warehouse Supervisor, Warehouse Manager, Logistics Associate')
