@@ -14,7 +14,7 @@ import fetch from 'node-fetch';
 // ========================================
 const PORT = Number(process.env.PORT || 3010);
 const SITE_URL = (process.env.SITE_URL || `http://localhost:${PORT}`).replace(/\/+$/,'');
-const SITE_NAME = process.env.SITE_NAME || 'Warehouse Jobs';
+const SITE_NAME = process.env.SITE_NAME || 'Get a Work';
 const FAVICON_URL = process.env.FAVICON_URL || '';
 const SITE_LOGO = process.env.SITE_LOGO || '';
 const SITE_SAMEAS = process.env.SITE_SAMEAS || ''; // Comma-separated social URLs
@@ -24,13 +24,13 @@ const MAX_JOBS = Number(process.env.MAX_JOBS || 100000);
 const CRON_SCHEDULE = process.env.CRON_SCHEDULE || '0 */6 * * *';
 const HAS_OPENAI = !!process.env.OPENAI_API_KEY;
 const CLICK_SECRET = process.env.CLICK_SECRET || crypto.randomBytes(16).toString('hex');
-const TARGET_PROFESSION = process.env.TARGET_PROFESSION || 'warehouse';
+const TARGET_PROFESSION = process.env.TARGET_PROFESSION || 'jobs';
 const AI_PROCESS_LIMIT = Number(process.env.AI_PROCESS_LIMIT || 0); // 0 = unlimited
 const CLARITY_ID = process.env.CLARITY_ID || 'tx6wzu0c05';
-const TARGET_COUNTRY = process.env.TARGET_COUNTRY || 'United Kingdom';
+const TARGET_COUNTRY = process.env.TARGET_COUNTRY || 'United States';
 
 // Keywords for profession matching (lowercase)
-const PROFESSION_KEYWORDS = (process.env.PROFESSION_KEYWORDS || 'Warehouse, Warehouse Worker, Warehouse Associate, Warehouse Operative, General Laborer, Stocker, Picker, Packer, Order Picker, Loader, Unloader, Dock Worker, Forklift Operator, Lift Truck Operator, Material Handler, Shipping Clerk, Receiving Clerk, Inventory Control Specialist, Warehouse Supervisor, Warehouse Manager, Logistics Associate')
+const PROFESSION_KEYWORDS = (process.env.PROFESSION_KEYWORDS || 'driver, truck driver, delivery driver, van driver, lorry driver, courier, bus driver, taxi driver, chauffeur, forklift operator, warehouse operative, warehouse worker, warehouse associate, picker, packer, order picker, order packer, warehouse assistant, logistics worker, warehouse operative nights, warehouse loader, stock assistant, material handler, shipping clerk, receiving clerk, logistics assistant, dispatcher, labourer, general labourer, construction worker, builder, carpenter, joiner, mason, bricklayer, roofer, tiler, plasterer, painter, decorator, electrician, electrical technician, plumber, plumbing installer, welder, steel fixer, fabricator, pipefitter, sheet metal worker, mechanic, car mechanic, auto technician, maintenance mechanic, diesel mechanic, heavy vehicle mechanic, machine operator, cnc operator, cnc machinist, milling operator, turning operator, assembler, production worker, factory worker, manufacturing operative, production operative, assembly line worker, maintenance technician, hvac technician, air conditioning installer, refrigeration technician, boiler operator, installation technician, cable installer, electrical installer, fibre technician, telecom technician, rigger, crane operator, excavator operator, forklift driver, loader operator, heavy equipment operator, maintenance worker, groundskeeper, gardener, landscaper, tree surgeon, cleaner, industrial cleaner, housekeeper, janitor, sanitation worker, waste collector, recycling operative, window cleaner, kitchen porter, kitchen assistant, line cook, commis chef, cook, chef de partie, grill cook, dishwasher, food production operative, baker, butcher, fishmonger, laundry worker, textile operator, sewing machinist, dry cleaner, packhouse worker, farm worker, agricultural worker, fruit picker, vegetable picker, harvester, vineyard worker, dairy worker, ranch hand, stable hand, animal caretaker, pest control technician, pest exterminator, driver loader, refuse driver, street cleaner, road worker, asphalt worker, construction labourer, scaffolder, insulation installer, painter and decorator, flooring installer, tiling specialist, plastering worker, handyman, maintenance assistant, caretaker, security guard, doorman, bouncer, parking attendant, car wash attendant, valet driver, delivery rider, motorcycle courier, bike courier, postman, mail sorter, porter, mover, removal worker, warehouse packer, logistics operative, production line worker')
   .toLowerCase()
   .split(',')
   .map(s => s.trim())
@@ -62,46 +62,57 @@ const CITY_EXTRA_HOSTS = (process.env.CITY_EXTRA_HOSTS || '')
   .filter(Boolean);
 
 const CITY_SUBDOMAINS = {
-  london: {
-    label: 'London',
-    aliases: ['london', 'greater london', 'wembley', 'croydon', 'hackney', 'camden']
-  },
-  manchester: {
-    label: 'Manchester',
-    aliases: ['manchester', 'greater manchester', 'salford', 'trafford', 'stockport', 'bury']
-  },
-  birmingham: {
-    label: 'Birmingham',
-    aliases: ['birmingham', 'west midlands', 'solihull', 'walsall', 'sutton coldfield']
-  },
-  leeds: {
-    label: 'Leeds',
-    aliases: ['leeds', 'west yorkshire', 'wakefield', 'bradford']
-  },
-  liverpool: {
-    label: 'Liverpool',
-    aliases: ['liverpool', 'merseyside', 'wirral', 'st helens']
-  },
-  glasgow: {
-    label: 'Glasgow',
-    aliases: ['glasgow', 'lanarkshire', 'paisley', 'clydebank']
-  },
-  bristol: {
-    label: 'Bristol',
-    aliases: ['bristol', 'south west england', 'avon', 'north somerset']
-  },
-  sheffield: {
-    label: 'Sheffield',
-    aliases: ['sheffield', 'south yorkshire', 'rotherham', 'barnsley']
-  },
-  edinburgh: {
-    label: 'Edinburgh',
-    aliases: ['edinburgh', 'lothian', 'midlothian', 'west lothian']
-  },
-  cardiff: {
-    label: 'Cardiff',
-    aliases: ['cardiff', 'caerdydd', 'vale of glamorgan', 'south glamorgan', 'pontypridd']
-  }
+  'alabama': { label: 'Alabama', aliases: ['alabama', 'al', 'montgomery', 'birmingham'] },
+  'alaska': { label: 'Alaska', aliases: ['alaska', 'ak', 'anchorage', 'juneau'] },
+  'arizona': { label: 'Arizona', aliases: ['arizona', 'az', 'phoenix', 'tucson', 'mesa'] },
+  'arkansas': { label: 'Arkansas', aliases: ['arkansas', 'ar', 'little rock', 'fayetteville'] },
+  'california': { label: 'California', aliases: ['california', 'ca', 'los angeles', 'san francisco', 'san diego', 'sacramento'] },
+  'colorado': { label: 'Colorado', aliases: ['colorado', 'co', 'denver', 'colorado springs', 'boulder'] },
+  'connecticut': { label: 'Connecticut', aliases: ['connecticut', 'ct', 'hartford', 'stamford'] },
+  'delaware': { label: 'Delaware', aliases: ['delaware', 'de', 'dover', 'wilmington'] },
+  'florida': { label: 'Florida', aliases: ['florida', 'fl', 'miami', 'orlando', 'tampa', 'jacksonville'] },
+  'georgia': { label: 'Georgia', aliases: ['georgia', 'ga', 'atlanta', 'savannah'] },
+  'hawaii': { label: 'Hawaii', aliases: ['hawaii', 'hi', 'honolulu'] },
+  'idaho': { label: 'Idaho', aliases: ['idaho', 'id', 'boise'] },
+  'illinois': { label: 'Illinois', aliases: ['illinois', 'il', 'chicago', 'springfield'] },
+  'indiana': { label: 'Indiana', aliases: ['indiana', 'in', 'indianapolis', 'fort wayne'] },
+  'iowa': { label: 'Iowa', aliases: ['iowa', 'ia', 'des moines', 'cedar rapids'] },
+  'kansas': { label: 'Kansas', aliases: ['kansas', 'ks', 'wichita', 'topeka'] },
+  'kentucky': { label: 'Kentucky', aliases: ['kentucky', 'ky', 'louisville', 'lexington'] },
+  'louisiana': { label: 'Louisiana', aliases: ['louisiana', 'la', 'new orleans', 'baton rouge'] },
+  'maine': { label: 'Maine', aliases: ['maine', 'me', 'portland', 'augusta'] },
+  'maryland': { label: 'Maryland', aliases: ['maryland', 'md', 'baltimore', 'annapolis'] },
+  'massachusetts': { label: 'Massachusetts', aliases: ['massachusetts', 'ma', 'boston', 'cambridge'] },
+  'michigan': { label: 'Michigan', aliases: ['michigan', 'mi', 'detroit', 'grand rapids'] },
+  'minnesota': { label: 'Minnesota', aliases: ['minnesota', 'mn', 'minneapolis', 'st paul'] },
+  'mississippi': { label: 'Mississippi', aliases: ['mississippi', 'ms', 'jackson', 'gulfport'] },
+  'missouri': { label: 'Missouri', aliases: ['missouri', 'mo', 'st louis', 'kansas city'] },
+  'montana': { label: 'Montana', aliases: ['montana', 'mt', 'billings', 'missoula'] },
+  'nebraska': { label: 'Nebraska', aliases: ['nebraska', 'ne', 'omaha', 'lincoln'] },
+  'nevada': { label: 'Nevada', aliases: ['nevada', 'nv', 'las vegas', 'reno'] },
+  'new-hampshire': { label: 'New Hampshire', aliases: ['new hampshire', 'nh', 'manchester', 'concord'] },
+  'new-jersey': { label: 'New Jersey', aliases: ['new jersey', 'nj', 'newark', 'jersey city'] },
+  'new-mexico': { label: 'New Mexico', aliases: ['new mexico', 'nm', 'albuquerque', 'santa fe'] },
+  'new-york': { label: 'New York', aliases: ['new york', 'ny', 'new york city', 'nyc', 'buffalo', 'rochester'] },
+  'north-carolina': { label: 'North Carolina', aliases: ['north carolina', 'nc', 'charlotte', 'raleigh', 'durham'] },
+  'north-dakota': { label: 'North Dakota', aliases: ['north dakota', 'nd', 'fargo', 'bismarck'] },
+  'ohio': { label: 'Ohio', aliases: ['ohio', 'oh', 'columbus', 'cleveland', 'cincinnati'] },
+  'oklahoma': { label: 'Oklahoma', aliases: ['oklahoma', 'ok', 'oklahoma city', 'tulsa'] },
+  'oregon': { label: 'Oregon', aliases: ['oregon', 'or', 'portland', 'salem', 'eugene'] },
+  'pennsylvania': { label: 'Pennsylvania', aliases: ['pennsylvania', 'pa', 'philadelphia', 'pittsburgh', 'harrisburg'] },
+  'district-of-columbia': { label: 'District of Columbia', aliases: ['district of columbia', 'washington dc', 'dc'] },
+  'rhode-island': { label: 'Rhode Island', aliases: ['rhode island', 'ri', 'providence', 'newport'] },
+  'south-carolina': { label: 'South Carolina', aliases: ['south carolina', 'sc', 'columbia', 'charleston', 'greenville'] },
+  'south-dakota': { label: 'South Dakota', aliases: ['south dakota', 'sd', 'sioux falls', 'pierre'] },
+  'tennessee': { label: 'Tennessee', aliases: ['tennessee', 'tn', 'nashville', 'memphis', 'knoxville'] },
+  'texas': { label: 'Texas', aliases: ['texas', 'tx', 'houston', 'dallas', 'austin', 'san antonio'] },
+  'utah': { label: 'Utah', aliases: ['utah', 'ut', 'salt lake city', 'provo'] },
+  'vermont': { label: 'Vermont', aliases: ['vermont', 'vt', 'burlington', 'montpelier'] },
+  'virginia': { label: 'Virginia', aliases: ['virginia', 'va', 'richmond', 'virginia beach', 'norfolk'] },
+  'washington': { label: 'Washington', aliases: ['washington', 'wa', 'seattle', 'spokane', 'tacoma'] },
+  'west-virginia': { label: 'West Virginia', aliases: ['west virginia', 'wv', 'charleston', 'morgantown'] },
+  'wisconsin': { label: 'Wisconsin', aliases: ['wisconsin', 'wi', 'milwaukee', 'madison', 'green bay'] },
+  'wyoming': { label: 'Wyoming', aliases: ['wyoming', 'wy', 'cheyenne', 'casper'] }
 };
 
 const CITY_HOST_LOOKUP = new Map();
@@ -127,10 +138,16 @@ function configureCityMappings() {
   CITY_HOST_LOOKUP.clear();
   CITY_ALIAS_LOOKUP.clear();
 
+  const addHost = (arr, host) => {
+    if (!host) return;
+    const lower = host.toLowerCase();
+    if (!arr.includes(lower)) arr.push(lower);
+  };
+
   for (const [slug, city] of Object.entries(CITY_SUBDOMAINS)) {
     city.slug = slug;
     city.aliases = Array.isArray(city.aliases) ? city.aliases : [];
-    city.label = city.label || slug.charAt(0).toUpperCase() + slug.slice(1);
+    city.label = city.label || slug.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
 
     const aliasSet = new Set(
       [slug, city.label, ...city.aliases]
@@ -145,7 +162,6 @@ function configureCityMappings() {
     });
 
     let derivedHost = '';
-    const hostCandidates = new Set();
     if (city.siteUrl) {
       try {
         derivedHost = new URL(city.siteUrl).hostname.toLowerCase();
@@ -153,36 +169,24 @@ function configureCityMappings() {
         derivedHost = '';
       }
     }
-    if (!derivedHost && SITE_BASE_PARTS.baseHost) {
-      derivedHost = `${slug}.${SITE_BASE_PARTS.baseHost}`;
-    }
 
-    const protocol = SITE_BASE_PARTS.protocol || 'https:';
-    if (derivedHost) hostCandidates.add(derivedHost);
-    if (SITE_BASE_PARTS.baseHost) hostCandidates.add(`${slug}.${SITE_BASE_PARTS.baseHost}`);
-    hostCandidates.add(`${slug}.jobbyu.online`);
-    hostCandidates.add(`${slug}.127.0.0.1`);
+    const hosts = [];
+    if (CITY_BASE_DOMAIN) addHost(hosts, `${slug}.${CITY_BASE_DOMAIN}`);
+    if (derivedHost) addHost(hosts, derivedHost);
+    if (SITE_BASE_PARTS.baseHost) addHost(hosts, `${slug}.${SITE_BASE_PARTS.baseHost}`);
+    CITY_EXTRA_HOSTS.forEach(base => addHost(hosts, `${slug}.${base}`));
+    addHost(hosts, `${slug}.localhost`);
+    addHost(hosts, `${slug}.127.0.0.1`);
 
-    const extraHostEnv = process.env.CITY_EXTRA_HOSTS || '';
-    if (extraHostEnv) {
-      extraHostEnv
-        .split(',')
-        .map(s => s.trim().toLowerCase())
-        .filter(Boolean)
-        .forEach(prefix => hostCandidates.add(`${slug}.${prefix}`));
-    }
+    const protocol = (CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:').replace(/:+$/, '') + '://';
+    let primaryHost = hosts[0] || derivedHost;
+    if (!primaryHost && CITY_BASE_DOMAIN) primaryHost = `${slug}.${CITY_BASE_DOMAIN}`;
+    if (!primaryHost && SITE_BASE_PARTS.baseHost) primaryHost = `${slug}.${SITE_BASE_PARTS.baseHost}`;
 
-    const hostList = Array.from(hostCandidates).filter(Boolean);
-    let primaryHost = hostList[0] || derivedHost;
-    if (!primaryHost && SITE_BASE_PARTS.baseHost) {
-      primaryHost = `${slug}.${SITE_BASE_PARTS.baseHost}`;
-    }
-    city.siteUrl = primaryHost ? `${protocol}//${primaryHost}` : SITE_URL;
-    city.hosts = hostList;
+    city.siteUrl = primaryHost ? `${protocol}${primaryHost}` : ensureAbsoluteUrl(SITE_URL, CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:');
+    city.hosts = hosts;
 
-    hostList.forEach(host => {
-      CITY_HOST_LOOKUP.set(host, city);
-    });
+    hosts.forEach(host => CITY_HOST_LOOKUP.set(host, city));
   }
 }
 
@@ -207,7 +211,7 @@ function resolveCitySlug(region = {}) {
     if (cityMatch) {
       const cityName = cityParts.length ? cityParts[0] : cityMatch.label;
       const stateName = stateParts.length ? stateParts[0] : region.state || '';
-      const countryName = String(region.country || '').trim() || 'UK';
+      const countryName = String(region.country || '').trim() || 'USA';
       return {
         slug: cityMatch.slug,
         name: cityName || cityMatch.label,
@@ -1282,7 +1286,7 @@ function layout({ title, body, metaExtra = '', breadcrumbs = null, cityCtx = nul
     })
     .join('');
   const cityMenuHtml = cityLinkEntries.length > 1
-    ? `<details class="city-switcher"><summary>All cities</summary><div class="city-switcher__menu">${cityLinksHtml}</div></details>`
+    ? `<details class="city-switcher"><summary>All states</summary><div class="city-switcher__menu">${cityLinksHtml}</div></details>`
     : '';
   const clarityScript = CLARITY_ID ? `
 <script type="text/javascript">
@@ -1362,7 +1366,6 @@ function layout({ title, body, metaExtra = '', breadcrumbs = null, cityCtx = nul
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>${titleMeta}</title>
 <meta name="description" content="${metaDescription}"/>
-<meta name="robots" content="noindex, nofollow"/>
 <link rel="canonical" href="${canonicalUrl}"/>
 ${faviconHtml}
 <link rel="alternate" type="application/rss+xml" title="RSS Feed" href="${ensureAbsoluteUrl(canonical('/feed.xml', activeSiteUrl), CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:')}"/>
@@ -1451,6 +1454,7 @@ app.get('/', (req, res) => {
   const cityCtx = res.locals.cityCtx;
   const activeSiteUrl = ensureAbsoluteUrl(res.locals.activeSiteUrl || MAIN_SITE_URL, CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:');
   const siteDisplayName = res.locals.siteDisplayName || SITE_NAME;
+  const publicationDateDisplay = escapeHtml(formatPublicationDate('en-US'));
   const pageSize = 50;
   const cursor = req.query.cursor || '';
   let rows;
@@ -1467,19 +1471,20 @@ app.get('/', (req, res) => {
   const hasMore = rows.length === pageSize;
   const nextCursor = hasMore ? `${rows[rows.length - 1].published_at}-${rows[rows.length - 1].id}` : null;
 
+  const publicationDateDisplay = escapeHtml(formatPublicationDate('en-US'));
   const items = rows.map(r => `
 <li class="card">
   <h2><a href="/job/${r.slug}">${escapeHtml(r.title)}</a></h2>
   ${r.company ? `<div class="muted">${escapeHtml(r.company)}</div>` : ''}
   ${formatLocation(r) ? `<div class="muted small">${escapeHtml(formatLocation(r))}</div>` : ''}
   <p>${escapeHtml(r.description_short)}</p>
-  <div class="muted small">${new Date(r.published_at * 1000).toLocaleDateString('en-US')}</div>
+  <div class="muted small">${publicationDateDisplay}</div>
 </li>`).join('');
 
   const cityLinkEntries = getCityLinkEntries();
   const cityLinksCard = cityLinkEntries.length > 1 ? `
 <section class="card city-links-card">
-  <h3>Browse cities</h3>
+  <h3>Browse states</h3>
   <div class="city-links-grid">
     ${cityLinkEntries.map(link => {
       const isActive = (!cityCtx && link.slug === null) || (cityCtx && link.slug === cityCtx.slug);
@@ -1562,12 +1567,11 @@ ${pager}
   }));
 });
 
-// SEARCH PAGE — set NOINDEX
+// SEARCH PAGE
 app.get('/search', (req, res) => {
   const cityCtx = res.locals.cityCtx;
   const activeSiteUrl = ensureAbsoluteUrl(res.locals.activeSiteUrl || MAIN_SITE_URL, CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:');
   const siteDisplayName = res.locals.siteDisplayName || SITE_NAME;
-  res.setHeader('X-Robots-Tag', 'noindex, nofollow');
   const q = String(req.query.q || '').trim();
   if (!q) return res.redirect('/');
   const searchPattern = `%${q}%`;
@@ -1581,7 +1585,7 @@ app.get('/search', (req, res) => {
   ${r.company ? `<div class="muted">${escapeHtml(r.company)}</div>` : ''}
   ${formatLocation(r) ? `<div class="muted small">${escapeHtml(formatLocation(r))}</div>` : ''}
   <p>${escapeHtml(r.description_short)}</p>
-  <div class="muted small">${new Date(r.published_at * 1000).toLocaleDateString('en-US')}</div>
+  <div class="muted small">${publicationDateDisplay}</div>
 </li>`).join('');
 
   const breadcrumbs = [
@@ -1602,7 +1606,6 @@ app.get('/search', (req, res) => {
 <p><a href="/">← Back to all jobs</a></p>
 `,
     breadcrumbs,
-    metaExtra: `<meta name="robots" content="noindex, nofollow"/>`,
     cityCtx,
     siteUrlOverride: activeSiteUrl
   }));
@@ -1613,7 +1616,6 @@ app.get('/post-job', (req, res) => {
   const cityCtx = res.locals.cityCtx;
   const activeSiteUrl = ensureAbsoluteUrl(res.locals.activeSiteUrl || MAIN_SITE_URL, CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:');
   const siteDisplayName = res.locals.siteDisplayName || SITE_NAME;
-  res.setHeader('X-Robots-Tag', 'noindex, nofollow');
   const breadcrumbs = [
     { name: 'Home', url: '/' },
     { name: 'Post a Job', url: '/post-job' }
@@ -1706,7 +1708,6 @@ app.get('/post-job', (req, res) => {
 
 // POST A JOB (POST - submission)
 app.post('/post-job', async (req, res) => {
-  res.setHeader('X-Robots-Tag', 'noindex, nofollow');
   try {
     const {
       title, company, url,
@@ -1872,13 +1873,14 @@ app.get('/tag/:slug', (req, res) => {
   const hasMore = rows.length === pageSize;
   const nextCursor = hasMore ? `${rows[rows.length - 1].published_at}-${rows[rows.length - 1].id}` : null;
 
+  const publicationDateDisplay = escapeHtml(formatPublicationDate('en-US'));
   const items = rows.map(r => `
 <li class="card">
   <h2><a href="/job/${r.slug}">${escapeHtml(r.title)}</a></h2>
   ${r.company ? `<div class="muted">${escapeHtml(r.company)}</div>` : ''}
   ${formatLocation(r) ? `<div class="muted small">${escapeHtml(formatLocation(r))}</div>` : ''}
   <p>${escapeHtml(r.description_short)}</p>
-  <div class="muted small">${new Date(r.published_at * 1000).toLocaleDateString('en-US')}</div>
+  <div class="muted small">${publicationDateDisplay}</div>
 </li>`).join('');
 
   const pagerLinks = [];
@@ -1978,6 +1980,7 @@ app.get('/job/:slug', (req, res) => {
     }
   }
 
+  const publicationDateDisplay = escapeHtml(formatPublicationDate('en-US'));
   const token = crypto.createHmac('sha256', CLICK_SECRET).update(String(job.id)).digest('hex').slice(0, 16);
   const tags = (job.tags_csv || '').split(',').map(s => s.trim()).filter(Boolean);
   const tagsHtml = tags.length ? `<div class="tags">
@@ -1985,7 +1988,7 @@ app.get('/job/:slug', (req, res) => {
   </div>` : '';
 
   const meta = parseMeta(job.description_html || '', job.title || '');
-  const datePostedISO = new Date(job.published_at * 1000).toISOString();
+  const datePostedISO = PUBLICATION_DATE_ISO;
   const validThrough = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString();
 
   // REQUIRED: jobLocation (always present)
@@ -2038,10 +2041,7 @@ app.get('/job/:slug', (req, res) => {
     { name: job.title, url: `/job/${job.slug}` }
   ];
 
-  const metaExtra = `
-<script type="application/ld+json">${JSON.stringify(jobPostingJson)}</script>
-<meta name="robots" content="index, follow"/>
-`;
+  const metaExtra = `<script type="application/ld+json">${JSON.stringify(jobPostingJson)}</script>`;
 
   const body = `
 <nav class="muted small"><a href="/">Home</a> › ${escapeHtml(job.title)}</nav>
@@ -2049,7 +2049,7 @@ app.get('/job/:slug', (req, res) => {
   <h1>${escapeHtml(job.title)}</h1>
   ${job.company ? `<div class="muted">${escapeHtml(job.company)}</div>` : ''}
   ${formatLocation(job) ? `<div class="muted">${escapeHtml(formatLocation(job))}</div>` : ''}
-  <div class="muted small">${new Date(job.published_at * 1000).toLocaleDateString('en-US')}</div>
+  <div class="muted small">${publicationDateDisplay}</div>
   ${tagsHtml}
   <div class="content">${job.description_html || ''}</div>
   <form method="POST" action="/go" style="margin-top:24px">
@@ -2065,7 +2065,6 @@ app.get('/job/:slug', (req, res) => {
 
 // /go - redirect to source (with security token)
 app.post('/go', (req, res) => {
-  res.setHeader('X-Robots-Tag', 'noindex, nofollow');
   const id = Number(req.body?.id || 0);
   const t = String(req.body?.t || '');
   if (!id || !t) return res.status(400).send('Bad request');
@@ -2076,7 +2075,6 @@ app.post('/go', (req, res) => {
   return res.redirect(302, job.url);
 });
 app.get('/go', (_req, res) => {
-  res.setHeader('X-Robots-Tag', 'noindex, nofollow');
   return res.status(405).send('Method Not Allowed');
 });
 
@@ -2265,7 +2263,6 @@ app.get('/cookies', (req, res) => {
 
 // Manual feed fetch (for testing/admin)
 app.get('/fetch', async (_req, res) => {
-  res.setHeader('X-Robots-Tag', 'noindex, nofollow');
   res.write('Processing feed...\n\n');
   try {
     await processFeed();
