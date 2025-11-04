@@ -1454,7 +1454,6 @@ app.get('/', (req, res) => {
   const cityCtx = res.locals.cityCtx;
   const activeSiteUrl = ensureAbsoluteUrl(res.locals.activeSiteUrl || MAIN_SITE_URL, CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:');
   const siteDisplayName = res.locals.siteDisplayName || SITE_NAME;
-  const publicationDateDisplay = escapeHtml(formatPublicationDate('en-US'));
   const pageSize = 50;
   const cursor = req.query.cursor || '';
   let rows;
@@ -1579,6 +1578,7 @@ app.get('/search', (req, res) => {
     ? stmtSearchCity.all(cityCtx.slug, searchPattern, searchPattern)
     : stmtSearch.all(searchPattern, searchPattern);
 
+  const publicationDateDisplay = escapeHtml(formatPublicationDate('en-US'));
   const items = rows.map(r => `
 <li class="card">
   <h2><a href="/job/${r.slug}">${escapeHtml(r.title)}</a></h2>
