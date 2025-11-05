@@ -74,58 +74,44 @@ const CITY_EXTRA_HOSTS = (process.env.CITY_EXTRA_HOSTS || '')
   .map(s => s.trim().toLowerCase())
   .filter(Boolean);
 
+const STATIC_TAG_SUGGESTIONS = [
+  { label: 'Truck Driver Jobs', query: 'truck driver' },
+  { label: 'Delivery Driver Jobs', query: 'delivery driver' },
+  { label: 'Forklift Operator Jobs', query: 'forklift operator' },
+  { label: 'Warehouse Associate Jobs', query: 'warehouse associate' },
+  { label: 'Logistics Coordinator Jobs', query: 'logistics coordinator' },
+  { label: 'General Labor Jobs', query: 'general labor' },
+  { label: 'Construction Jobs', query: 'construction worker' },
+  { label: 'HVAC Technician Jobs', query: 'hvac technician' },
+  { label: 'Electrician Jobs', query: 'electrician' },
+  { label: 'Plumber Jobs', query: 'plumber' },
+  { label: 'Maintenance Technician Jobs', query: 'maintenance technician' },
+  { label: 'Production Worker Jobs', query: 'production worker' },
+  { label: 'Mechanic Jobs', query: 'mechanic' },
+  { label: 'Pest Control Jobs', query: 'pest control' }
+];
+
 const CITY_SUBDOMAINS = {
-  'alabama': { label: 'Alabama', aliases: ['alabama', 'al', 'montgomery', 'birmingham'] },
-  'alaska': { label: 'Alaska', aliases: ['alaska', 'ak', 'anchorage', 'juneau'] },
-  'arizona': { label: 'Arizona', aliases: ['arizona', 'az', 'phoenix', 'tucson', 'mesa'] },
-  'arkansas': { label: 'Arkansas', aliases: ['arkansas', 'ar', 'little rock', 'fayetteville'] },
   'california': { label: 'California', aliases: ['california', 'ca', 'los angeles', 'san francisco', 'san diego', 'sacramento'] },
-  'colorado': { label: 'Colorado', aliases: ['colorado', 'co', 'denver', 'colorado springs', 'boulder'] },
-  'connecticut': { label: 'Connecticut', aliases: ['connecticut', 'ct', 'hartford', 'stamford'] },
-  'delaware': { label: 'Delaware', aliases: ['delaware', 'de', 'dover', 'wilmington'] },
-  'florida': { label: 'Florida', aliases: ['florida', 'fl', 'miami', 'orlando', 'tampa', 'jacksonville'] },
-  'georgia': { label: 'Georgia', aliases: ['georgia', 'ga', 'atlanta', 'savannah'] },
-  'hawaii': { label: 'Hawaii', aliases: ['hawaii', 'hi', 'honolulu'] },
-  'idaho': { label: 'Idaho', aliases: ['idaho', 'id', 'boise'] },
-  'illinois': { label: 'Illinois', aliases: ['illinois', 'il', 'chicago', 'springfield'] },
-  'indiana': { label: 'Indiana', aliases: ['indiana', 'in', 'indianapolis', 'fort wayne'] },
-  'iowa': { label: 'Iowa', aliases: ['iowa', 'ia', 'des moines', 'cedar rapids'] },
-  'kansas': { label: 'Kansas', aliases: ['kansas', 'ks', 'wichita', 'topeka'] },
-  'kentucky': { label: 'Kentucky', aliases: ['kentucky', 'ky', 'louisville', 'lexington'] },
-  'louisiana': { label: 'Louisiana', aliases: ['louisiana', 'la', 'new orleans', 'baton rouge'] },
-  'maine': { label: 'Maine', aliases: ['maine', 'me', 'portland', 'augusta'] },
-  'maryland': { label: 'Maryland', aliases: ['maryland', 'md', 'baltimore', 'annapolis'] },
-  'massachusetts': { label: 'Massachusetts', aliases: ['massachusetts', 'ma', 'boston', 'cambridge'] },
-  'michigan': { label: 'Michigan', aliases: ['michigan', 'mi', 'detroit', 'grand rapids'] },
-  'minnesota': { label: 'Minnesota', aliases: ['minnesota', 'mn', 'minneapolis', 'st paul'] },
-  'mississippi': { label: 'Mississippi', aliases: ['mississippi', 'ms', 'jackson', 'gulfport'] },
-  'missouri': { label: 'Missouri', aliases: ['missouri', 'mo', 'st louis', 'kansas city'] },
-  'montana': { label: 'Montana', aliases: ['montana', 'mt', 'billings', 'missoula'] },
-  'nebraska': { label: 'Nebraska', aliases: ['nebraska', 'ne', 'omaha', 'lincoln'] },
-  'nevada': { label: 'Nevada', aliases: ['nevada', 'nv', 'las vegas', 'reno'] },
-  'new-hampshire': { label: 'New Hampshire', aliases: ['new hampshire', 'nh', 'manchester', 'concord'] },
-  'new-jersey': { label: 'New Jersey', aliases: ['new jersey', 'nj', 'newark', 'jersey city'] },
-  'new-mexico': { label: 'New Mexico', aliases: ['new mexico', 'nm', 'albuquerque', 'santa fe'] },
-  'new-york': { label: 'New York', aliases: ['new york', 'ny', 'new york city', 'nyc', 'buffalo', 'rochester'] },
-  'north-carolina': { label: 'North Carolina', aliases: ['north carolina', 'nc', 'charlotte', 'raleigh', 'durham'] },
-  'north-dakota': { label: 'North Dakota', aliases: ['north dakota', 'nd', 'fargo', 'bismarck'] },
-  'ohio': { label: 'Ohio', aliases: ['ohio', 'oh', 'columbus', 'cleveland', 'cincinnati'] },
-  'oklahoma': { label: 'Oklahoma', aliases: ['oklahoma', 'ok', 'oklahoma city', 'tulsa'] },
-  'oregon': { label: 'Oregon', aliases: ['oregon', 'or', 'portland', 'salem', 'eugene'] },
-  'pennsylvania': { label: 'Pennsylvania', aliases: ['pennsylvania', 'pa', 'philadelphia', 'pittsburgh', 'harrisburg'] },
-  'district-of-columbia': { label: 'District of Columbia', aliases: ['district of columbia', 'washington dc', 'dc'] },
-  'rhode-island': { label: 'Rhode Island', aliases: ['rhode island', 'ri', 'providence', 'newport'] },
-  'south-carolina': { label: 'South Carolina', aliases: ['south carolina', 'sc', 'columbia', 'charleston', 'greenville'] },
-  'south-dakota': { label: 'South Dakota', aliases: ['south dakota', 'sd', 'sioux falls', 'pierre'] },
-  'tennessee': { label: 'Tennessee', aliases: ['tennessee', 'tn', 'nashville', 'memphis', 'knoxville'] },
   'texas': { label: 'Texas', aliases: ['texas', 'tx', 'houston', 'dallas', 'austin', 'san antonio'] },
-  'utah': { label: 'Utah', aliases: ['utah', 'ut', 'salt lake city', 'provo'] },
-  'vermont': { label: 'Vermont', aliases: ['vermont', 'vt', 'burlington', 'montpelier'] },
+  'florida': { label: 'Florida', aliases: ['florida', 'fl', 'miami', 'orlando', 'tampa', 'jacksonville'] },
+  'new-york': { label: 'New York', aliases: ['new york', 'ny', 'new york city', 'nyc', 'buffalo', 'rochester'] },
+  'pennsylvania': { label: 'Pennsylvania', aliases: ['pennsylvania', 'pa', 'philadelphia', 'pittsburgh', 'harrisburg'] },
+  'illinois': { label: 'Illinois', aliases: ['illinois', 'il', 'chicago', 'springfield'] },
+  'ohio': { label: 'Ohio', aliases: ['ohio', 'oh', 'columbus', 'cleveland', 'cincinnati'] },
+  'georgia': { label: 'Georgia', aliases: ['georgia', 'ga', 'atlanta', 'savannah'] },
+  'north-carolina': { label: 'North Carolina', aliases: ['north carolina', 'nc', 'charlotte', 'raleigh', 'durham'] },
+  'michigan': { label: 'Michigan', aliases: ['michigan', 'mi', 'detroit', 'grand rapids'] },
+  'new-jersey': { label: 'New Jersey', aliases: ['new jersey', 'nj', 'newark', 'jersey city'] },
   'virginia': { label: 'Virginia', aliases: ['virginia', 'va', 'richmond', 'virginia beach', 'norfolk'] },
   'washington': { label: 'Washington', aliases: ['washington', 'wa', 'seattle', 'spokane', 'tacoma'] },
-  'west-virginia': { label: 'West Virginia', aliases: ['west virginia', 'wv', 'charleston', 'morgantown'] },
-  'wisconsin': { label: 'Wisconsin', aliases: ['wisconsin', 'wi', 'milwaukee', 'madison', 'green bay'] },
-  'wyoming': { label: 'Wyoming', aliases: ['wyoming', 'wy', 'cheyenne', 'casper'] }
+  'arizona': { label: 'Arizona', aliases: ['arizona', 'az', 'phoenix', 'tucson', 'mesa'] },
+  'massachusetts': { label: 'Massachusetts', aliases: ['massachusetts', 'ma', 'boston', 'cambridge'] },
+  'tennessee': { label: 'Tennessee', aliases: ['tennessee', 'tn', 'nashville', 'memphis', 'knoxville'] },
+  'indiana': { label: 'Indiana', aliases: ['indiana', 'in', 'indianapolis', 'fort wayne'] },
+  'missouri': { label: 'Missouri', aliases: ['missouri', 'mo', 'st louis', 'kansas city'] },
+  'maryland': { label: 'Maryland', aliases: ['maryland', 'md', 'baltimore', 'annapolis'] },
+  'wisconsin': { label: 'Wisconsin', aliases: ['wisconsin', 'wi', 'milwaukee', 'madison', 'green bay'] }
 };
 
 const CITY_HOST_LOOKUP = new Map();
@@ -1160,6 +1146,8 @@ nav a:hover { color: var(--primary); background: var(--bg); }
 .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .tag { background: #eff6ff; color: var(--primary); border-radius: 999px; padding: 6px 14px; font-size: 13px; text-decoration: none; transition: all 0.2s; border: 1px solid #dbeafe; }
 .tag:hover { background: var(--primary); color: white; border-color: var(--primary); }
+.tag-suggestion { background: #ecfdf5; border-color: #bbf7d0; color: #047857; }
+.tag-suggestion:hover { background: #047857; color: #ecfdf5; border-color: #047857; }
 .content h2 { color: var(--text); margin-top: 24px; font-size: 20px; }
 .content p, .content ul, .content ol { line-height: 1.7; margin: 12px 0; }
 .content ul, .content ol { padding-left: 24px; }
@@ -1509,11 +1497,18 @@ app.get('/', (req, res) => {
   const popular = cityCtx
     ? stmtPopularTagsByCity.all(cityCtx.slug, 5, 50)
     : stmtPopularTags.all(5, 50);
-  const tagsBlock = popular.length ? `
+
+  const seenTags = new Set(popular.map(t => t.name.trim().toLowerCase()));
+  const staticTagLinks = STATIC_TAG_SUGGESTIONS
+    .filter(tag => !seenTags.has(tag.label.trim().toLowerCase()))
+    .map(tag => `<a class="tag tag-suggestion" href="/search?q=${encodeURIComponent(tag.query)}">${escapeHtml(tag.label)}</a>`);
+  const dynamicTagLinks = popular.map(t => `<a class="tag" href="/tag/${t.slug}">${escapeHtml(t.name)} (${t.cnt})</a>`);
+  const combinedTags = [...dynamicTagLinks, ...staticTagLinks];
+  const tagsBlock = combinedTags.length ? `
 <section>
-  <h3>Popular tags</h3>
+   <h3>Popular tags</h3>
   <div class="tags">
-    ${popular.map(t => `<a class="tag" href="/tag/${t.slug}">${escapeHtml(t.name)} (${t.cnt})</a>`).join('')}
+    ${combinedTags.join('')}
   </div>
 </section>` : '';
 
