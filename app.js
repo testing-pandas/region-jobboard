@@ -75,20 +75,20 @@ const CITY_EXTRA_HOSTS = (process.env.CITY_EXTRA_HOSTS || '')
   .filter(Boolean);
 
 const STATIC_TAG_SUGGESTIONS = [
-  { label: 'Truck Driver Jobs', query: 'truck driver' },
-  { label: 'Delivery Driver Jobs', query: 'delivery driver' },
-  { label: 'Forklift Operator Jobs', query: 'forklift operator' },
-  { label: 'Warehouse Associate Jobs', query: 'warehouse associate' },
-  { label: 'Logistics Coordinator Jobs', query: 'logistics coordinator' },
-  { label: 'General Labor Jobs', query: 'general labor' },
-  { label: 'Construction Jobs', query: 'construction worker' },
-  { label: 'HVAC Technician Jobs', query: 'hvac technician' },
-  { label: 'Electrician Jobs', query: 'electrician' },
-  { label: 'Plumber Jobs', query: 'plumber' },
-  { label: 'Maintenance Technician Jobs', query: 'maintenance technician' },
-  { label: 'Production Worker Jobs', query: 'production worker' },
-  { label: 'Mechanic Jobs', query: 'mechanic' },
-  { label: 'Pest Control Jobs', query: 'pest control' }
+  { label: 'Truck Driver Jobs', slug: 'truck-driver', aliases: ['truck driver'] },
+  { label: 'Delivery Driver Jobs', slug: 'delivery-driver', aliases: ['delivery driver', 'courier'] },
+  { label: 'Forklift Operator Jobs', slug: 'forklift-operator', aliases: ['forklift operator'] },
+  { label: 'Warehouse Associate Jobs', slug: 'warehouse-associate', aliases: ['warehouse associate', 'warehouse worker'] },
+  { label: 'Logistics Coordinator Jobs', slug: 'logistics-coordinator', aliases: ['logistics coordinator', 'dispatcher'] },
+  { label: 'General Labor Jobs', slug: 'general-labor', aliases: ['general labor', 'labourer'] },
+  { label: 'Construction Jobs', slug: 'construction-worker', aliases: ['construction worker', 'builder'] },
+  { label: 'HVAC Technician Jobs', slug: 'hvac-technician', aliases: ['hvac technician'] },
+  { label: 'Electrician Jobs', slug: 'electrician', aliases: ['electrician'] },
+  { label: 'Plumber Jobs', slug: 'plumber', aliases: ['plumber'] },
+  { label: 'Maintenance Technician Jobs', slug: 'maintenance-technician', aliases: ['maintenance technician'] },
+  { label: 'Production Worker Jobs', slug: 'production-worker', aliases: ['production worker', 'factory worker'] },
+  { label: 'Mechanic Jobs', slug: 'mechanic', aliases: ['mechanic', 'auto mechanic'] },
+  { label: 'Pest Control Jobs', slug: 'pest-control', aliases: ['pest control'] }
 ];
 
 const CITY_SUBDOMAINS = {
@@ -110,8 +110,7 @@ const CITY_SUBDOMAINS = {
   'tennessee': { label: 'Tennessee', aliases: ['tennessee', 'tn', 'nashville', 'memphis', 'knoxville'] },
   'indiana': { label: 'Indiana', aliases: ['indiana', 'in', 'indianapolis', 'fort wayne'] },
   'missouri': { label: 'Missouri', aliases: ['missouri', 'mo', 'st louis', 'kansas city'] },
-  'maryland': { label: 'Maryland', aliases: ['maryland', 'md', 'baltimore', 'annapolis'] },
-  'wisconsin': { label: 'Wisconsin', aliases: ['wisconsin', 'wi', 'milwaukee', 'madison', 'green bay'] }
+  'maryland': { label: 'Maryland', aliases: ['maryland', 'md', 'baltimore', 'annapolis'] }
 };
 
 const CITY_HOST_LOOKUP = new Map();
@@ -1501,7 +1500,7 @@ app.get('/', (req, res) => {
   const seenTags = new Set(popular.map(t => t.name.trim().toLowerCase()));
   const staticTagLinks = STATIC_TAG_SUGGESTIONS
     .filter(tag => !seenTags.has(tag.label.trim().toLowerCase()))
-    .map(tag => `<a class="tag tag-suggestion" href="/search?q=${encodeURIComponent(tag.query)}">${escapeHtml(tag.label)}</a>`);
+    .map(tag => `<a class="tag tag-suggestion" href="/tag/${tag.slug}">${escapeHtml(tag.label)}</a>`);
   const dynamicTagLinks = popular.map(t => `<a class="tag" href="/tag/${t.slug}">${escapeHtml(t.name)} (${t.cnt})</a>`);
   const combinedTags = [...dynamicTagLinks, ...staticTagLinks];
   const tagsBlock = combinedTags.length ? `
