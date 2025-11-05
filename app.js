@@ -60,7 +60,7 @@ const SITE_BASE_PARTS = (() => {
   }
 })();
 
-const CITY_BASE_DOMAIN = String(process.env.CITY_BASE_DOMAIN || '')
+const CITY_BASE_DOMAIN = String(process.env.CITY_BASE_DOMAIN || 'get-a.work')
   .trim()
   .replace(/^https?:\/\//i, '')
   .replace(/:\d+$/, '')
@@ -188,7 +188,7 @@ function configureCityMappings() {
     if (derivedHost) addHost(hosts, derivedHost);
     if (SITE_BASE_PARTS.baseHost) addHost(hosts, `${slug}.${SITE_BASE_PARTS.baseHost}`);
     CITY_EXTRA_HOSTS.forEach(base => addHost(hosts, `${slug}.${base}`));
-    addHost(hosts, `${slug}.get-a.work);
+    addHost(hosts, `${slug}.localhost`);
     addHost(hosts, `${slug}.127.0.0.1`);
 
     const protocol = (CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:').replace(/:+$/, '') + '://';
