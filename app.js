@@ -75,20 +75,20 @@ const CITY_EXTRA_HOSTS = (process.env.CITY_EXTRA_HOSTS || '')
   .filter(Boolean);
 
 const STATIC_TAG_SUGGESTIONS = [
-  { label: 'Truck Driver Jobs', slug: 'truck-driver', searchTerm: 'truck driver', aliases: ['truck driver'] },
-  { label: 'Delivery Driver Jobs', slug: 'delivery-driver', searchTerm: 'delivery driver', aliases: ['delivery driver', 'courier'] },
-  { label: 'Forklift Operator Jobs', slug: 'forklift-operator', searchTerm: 'forklift operator', aliases: ['forklift operator'] },
-  { label: 'Warehouse Associate Jobs', slug: 'warehouse-associate', searchTerm: 'warehouse associate', aliases: ['warehouse associate', 'warehouse worker'] },
-  { label: 'Logistics Coordinator Jobs', slug: 'logistics-coordinator', searchTerm: 'logistics coordinator', aliases: ['logistics coordinator', 'dispatcher'] },
-  { label: 'General Labor Jobs', slug: 'general-labor', searchTerm: 'general labor', aliases: ['general labor', 'labourer'] },
-  { label: 'Construction Jobs', slug: 'construction-worker', searchTerm: 'construction worker', aliases: ['construction worker', 'builder'] },
-  { label: 'HVAC Technician Jobs', slug: 'hvac-technician', searchTerm: 'hvac technician', aliases: ['hvac technician'] },
-  { label: 'Electrician Jobs', slug: 'electrician', searchTerm: 'electrician', aliases: ['electrician'] },
-  { label: 'Plumber Jobs', slug: 'plumber', searchTerm: 'plumber', aliases: ['plumber'] },
-  { label: 'Maintenance Technician Jobs', slug: 'maintenance-technician', searchTerm: 'maintenance technician', aliases: ['maintenance technician'] },
-  { label: 'Production Worker Jobs', slug: 'production-worker', searchTerm: 'production worker', aliases: ['production worker', 'factory worker'] },
-  { label: 'Mechanic Jobs', slug: 'mechanic', searchTerm: 'mechanic', aliases: ['mechanic', 'auto mechanic'] },
-  { label: 'Pest Control Jobs', slug: 'pest-control', searchTerm: 'pest control', aliases: ['pest control'] }
+  { label: 'Truck Driver', slug: 'truck-driver', searchTerm: 'truck driver', aliases: ['truck driver'] },
+  { label: 'Delivery Driver', slug: 'delivery-driver', searchTerm: 'delivery driver', aliases: ['delivery driver', 'courier'] },
+  { label: 'Forklift Operator', slug: 'forklift-operator', searchTerm: 'forklift operator', aliases: ['forklift operator'] },
+  { label: 'Warehouse Associate', slug: 'warehouse-associate', searchTerm: 'warehouse associate', aliases: ['warehouse associate', 'warehouse worker'] },
+  { label: 'Logistics Coordinator', slug: 'logistics-coordinator', searchTerm: 'logistics coordinator', aliases: ['logistics coordinator', 'dispatcher'] },
+  { label: 'General Labor', slug: 'general-labor', searchTerm: 'general labor', aliases: ['general labor', 'labourer'] },
+  { label: 'Construction', slug: 'construction-worker', searchTerm: 'construction worker', aliases: ['construction worker', 'builder'] },
+  { label: 'HVAC Technician', slug: 'hvac-technician', searchTerm: 'hvac technician', aliases: ['hvac technician'] },
+  { label: 'Electrician', slug: 'electrician', searchTerm: 'electrician', aliases: ['electrician'] },
+  { label: 'Plumber', slug: 'plumber', searchTerm: 'plumber', aliases: ['plumber'] },
+  { label: 'Maintenance Technician', slug: 'maintenance-technician', searchTerm: 'maintenance technician', aliases: ['maintenance technician'] },
+  { label: 'Production Worker', slug: 'production-worker', searchTerm: 'production worker', aliases: ['production worker', 'factory worker'] },
+  { label: 'Mechanic worker', slug: 'mechanic', searchTerm: 'mechanic', aliases: ['mechanic', 'auto mechanic'] },
+  { label: 'Pest Control', slug: 'pest-control', searchTerm: 'pest control', aliases: ['pest control'] }
 ];
 
 const STATIC_TAG_LOOKUP = STATIC_TAG_SUGGESTIONS.reduce((acc, tag) => {
