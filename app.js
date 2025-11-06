@@ -24,7 +24,7 @@ const MAX_JOBS = Number(process.env.MAX_JOBS || 100000);
 const CRON_SCHEDULE = process.env.CRON_SCHEDULE || '0 */6 * * *';
 const HAS_OPENAI = !!process.env.OPENAI_API_KEY;
 const CLICK_SECRET = process.env.CLICK_SECRET || crypto.randomBytes(16).toString('hex');
-const TARGET_PROFESSION = process.env.TARGET_PROFESSION || 'jobs';
+const TARGET_PROFESSION = process.env.TARGET_PROFESSION || 'Popular';
 const AI_PROCESS_LIMIT = Number(process.env.AI_PROCESS_LIMIT || 0); // 0 = unlimited
 const CLARITY_ID = process.env.CLARITY_ID || 'tx6wzu0c05';
 const TARGET_COUNTRY = process.env.TARGET_COUNTRY || 'United States';
@@ -75,21 +75,26 @@ const CITY_EXTRA_HOSTS = (process.env.CITY_EXTRA_HOSTS || '')
   .filter(Boolean);
 
 const STATIC_TAG_SUGGESTIONS = [
-  { label: 'Truck Driver Jobs', slug: 'truck-driver', aliases: ['truck driver'] },
-  { label: 'Delivery Driver Jobs', slug: 'delivery-driver', aliases: ['delivery driver', 'courier'] },
-  { label: 'Forklift Operator Jobs', slug: 'forklift-operator', aliases: ['forklift operator'] },
-  { label: 'Warehouse Associate Jobs', slug: 'warehouse-associate', aliases: ['warehouse associate', 'warehouse worker'] },
-  { label: 'Logistics Coordinator Jobs', slug: 'logistics-coordinator', aliases: ['logistics coordinator', 'dispatcher'] },
-  { label: 'General Labor Jobs', slug: 'general-labor', aliases: ['general labor', 'labourer'] },
-  { label: 'Construction Jobs', slug: 'construction-worker', aliases: ['construction worker', 'builder'] },
-  { label: 'HVAC Technician Jobs', slug: 'hvac-technician', aliases: ['hvac technician'] },
-  { label: 'Electrician Jobs', slug: 'electrician', aliases: ['electrician'] },
-  { label: 'Plumber Jobs', slug: 'plumber', aliases: ['plumber'] },
-  { label: 'Maintenance Technician Jobs', slug: 'maintenance-technician', aliases: ['maintenance technician'] },
-  { label: 'Production Worker Jobs', slug: 'production-worker', aliases: ['production worker', 'factory worker'] },
-  { label: 'Mechanic Jobs', slug: 'mechanic', aliases: ['mechanic', 'auto mechanic'] },
-  { label: 'Pest Control Jobs', slug: 'pest-control', aliases: ['pest control'] }
+  { label: 'Truck Driver Jobs', slug: 'truck-driver', searchTerm: 'truck driver', aliases: ['truck driver'] },
+  { label: 'Delivery Driver Jobs', slug: 'delivery-driver', searchTerm: 'delivery driver', aliases: ['delivery driver', 'courier'] },
+  { label: 'Forklift Operator Jobs', slug: 'forklift-operator', searchTerm: 'forklift operator', aliases: ['forklift operator'] },
+  { label: 'Warehouse Associate Jobs', slug: 'warehouse-associate', searchTerm: 'warehouse associate', aliases: ['warehouse associate', 'warehouse worker'] },
+  { label: 'Logistics Coordinator Jobs', slug: 'logistics-coordinator', searchTerm: 'logistics coordinator', aliases: ['logistics coordinator', 'dispatcher'] },
+  { label: 'General Labor Jobs', slug: 'general-labor', searchTerm: 'general labor', aliases: ['general labor', 'labourer'] },
+  { label: 'Construction Jobs', slug: 'construction-worker', searchTerm: 'construction worker', aliases: ['construction worker', 'builder'] },
+  { label: 'HVAC Technician Jobs', slug: 'hvac-technician', searchTerm: 'hvac technician', aliases: ['hvac technician'] },
+  { label: 'Electrician Jobs', slug: 'electrician', searchTerm: 'electrician', aliases: ['electrician'] },
+  { label: 'Plumber Jobs', slug: 'plumber', searchTerm: 'plumber', aliases: ['plumber'] },
+  { label: 'Maintenance Technician Jobs', slug: 'maintenance-technician', searchTerm: 'maintenance technician', aliases: ['maintenance technician'] },
+  { label: 'Production Worker Jobs', slug: 'production-worker', searchTerm: 'production worker', aliases: ['production worker', 'factory worker'] },
+  { label: 'Mechanic Jobs', slug: 'mechanic', searchTerm: 'mechanic', aliases: ['mechanic', 'auto mechanic'] },
+  { label: 'Pest Control Jobs', slug: 'pest-control', searchTerm: 'pest control', aliases: ['pest control'] }
 ];
+
+const STATIC_TAG_LOOKUP = STATIC_TAG_SUGGESTIONS.reduce((acc, tag) => {
+  acc[tag.slug] = tag;
+  return acc;
+}, {});
 
 const CITY_SUBDOMAINS = {
   'california': { label: 'California', aliases: ['california', 'ca', 'los angeles', 'san francisco', 'san diego', 'sacramento'] },
@@ -1854,33 +1859,74 @@ app.get('/rules', (req, res) => {
 // TAG PAGE with cursor pagination
 app.get('/tag/:slug', (req, res) => {
   const slug = req.params.slug;
-  const tag = stmtGetTagBySlug.get(slug);
-  if (!tag) return res.status(404).send('Not found');
+  let tag = stmtGetTagBySlug.get(slug);
+  const staticSuggestion = STATIC_TAG_LOOKUP[slug];
+
+  if (!tag && !staticSuggestion) return res.status(404).send('Not found');
 
   const cityCtx = res.locals.cityCtx;
   const activeSiteUrl = ensureAbsoluteUrl(res.locals.activeSiteUrl || MAIN_SITE_URL, CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:');
   const siteDisplayName = res.locals.siteDisplayName || SITE_NAME;
   const pageSize = 50;
   const cursor = req.query.cursor || '';
-  let rows;
-  if (!cursor) {
-    rows = cityCtx
-      ? stmtJobsByTagFirstByCity.all(slug, cityCtx.slug, pageSize)
-      : stmtJobsByTagFirst.all(slug, pageSize);
-  } else {
-    const [pub, id] = cursor.split('-').map(Number);
-    if (!pub || !id) return res.status(400).send('Invalid cursor');
-    rows = cityCtx
-      ? stmtJobsByTagCursorByCity.all(slug, cityCtx.slug, pub, pub, id, pageSize)
-      : stmtJobsByTagCursor.all(slug, pub, pub, id, pageSize);
-  }
-  const cnt = cityCtx
-    ? stmtCountJobsByTagIdCity.get(tag.id, cityCtx.slug)?.c || 0
-    : stmtCountJobsByTagId.get(tag.id).c;
-  const hasMore = rows.length === pageSize;
-  const nextCursor = hasMore ? `${rows[rows.length - 1].published_at}-${rows[rows.length - 1].id}` : null;
+
+  let rows = [];
+  let cnt = 0;
+  let hasMore = false;
+  let nextCursor = null;
+  let tagLabel = tag ? tag.name : staticSuggestion.label;
 
   const publicationDateDisplay = escapeHtml(formatPublicationDate('en-US'));
+
+  if (tag) {
+    if (!cursor) {
+      rows = cityCtx
+        ? stmtJobsByTagFirstByCity.all(slug, cityCtx.slug, pageSize)
+        : stmtJobsByTagFirst.all(slug, pageSize);
+    } else {
+      const [pub, id] = cursor.split('-').map(Number);
+      if (!pub || !id) return res.status(400).send('Invalid cursor');
+      rows = cityCtx
+        ? stmtJobsByTagCursorByCity.all(slug, cityCtx.slug, pub, pub, id, pageSize)
+        : stmtJobsByTagCursor.all(slug, pub, pub, id, pageSize);
+    }
+    cnt = cityCtx
+      ? stmtCountJobsByTagIdCity.get(tag.id, cityCtx.slug)?.c || 0
+      : stmtCountJobsByTagId.get(tag.id).c;
+    hasMore = rows.length === pageSize;
+    if (hasMore && rows.length) {
+      nextCursor = `${rows[rows.length - 1].published_at}-${rows[rows.length - 1].id}`;
+    }
+  } else {
+    const searchTerm = staticSuggestion.searchTerm || staticSuggestion.aliases?.[0] || staticSuggestion.label;
+    const pattern = `%${searchTerm}%`;
+    const baseRows = cityCtx
+      ? stmtSearchCity.all(cityCtx.slug, pattern, pattern)
+      : stmtSearch.all(pattern, pattern);
+    cnt = baseRows.length;
+
+    if (!cursor) {
+      rows = baseRows.slice(0, pageSize);
+      hasMore = baseRows.length > pageSize;
+      if (hasMore && rows.length) {
+        const last = rows[rows.length - 1];
+        nextCursor = `${last.published_at}-${last.id}`;
+      }
+    } else {
+      const [cursorPub, cursorId] = cursor.split('-').map(Number);
+      if (!cursorPub || !cursorId) return res.status(400).send('Invalid cursor');
+      const filtered = baseRows.filter(r => r.published_at < cursorPub || (r.published_at === cursorPub && r.id < cursorId));
+      rows = filtered.slice(0, pageSize);
+      hasMore = filtered.length > pageSize;
+      if (hasMore && rows.length) {
+        const last = rows[rows.length - 1];
+        nextCursor = `${last.published_at}-${last.id}`;
+      }
+    }
+
+    tag = { name: staticSuggestion.label, slug, isStatic: true };
+  }
+
   const items = rows.map(r => `
 <li class="card">
   <h2><a href="/job/${r.slug}">${escapeHtml(r.title)}</a></h2>
@@ -1903,20 +1949,20 @@ app.get('/tag/:slug', (req, res) => {
   const breadcrumbs = [
     { name: 'Home', url: '/' },
     { name: 'Tags', url: '/tags' },
-    { name: tag.name, url: `/tag/${slug}` }
+    { name: tagLabel, url: `/tag/${slug}` }
   ];
 
- const layoutTitle = cityCtx
-   ? `${tag.name} Jobs in ${cityCtx.label}`
-   : `${tag.name} Jobs`;
+  const layoutTitle = cityCtx
+    ? `${tagLabel} Jobs in ${cityCtx.label}`
+    : `${tagLabel} Jobs`;
   const headingText = cityCtx && cityCtx.label
-    ? `${tag.name} Jobs in ${cityCtx.label}`
-    : `${tag.name} Jobs`;
+    ? `${tagLabel} Jobs in ${cityCtx.label}`
+    : `${tagLabel} Jobs`;
 
   res.send(layout({
     title: layoutTitle,
     body: `
-<nav class="muted small"><a href="/">Home</a> › <a href="/tags">Tags</a> › ${escapeHtml(tag.name)}</nav>
+<nav class="muted small"><a href="/">Home</a> › <a href="/tags">Tags</a> › ${escapeHtml(tagLabel)}</nav>
 <h1>${escapeHtml(headingText)}</h1>
 <p class="muted">${cnt} jobs</p>
 <ul class="list">${items || '<li class="card">No jobs yet.</li>'}</ul>
