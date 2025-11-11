@@ -7,7 +7,6 @@ import { convert } from 'html-to-text';
 import cron from 'node-cron';
 import crypto from 'node:crypto';
 import sax from 'sax';
-import fetch from 'node-fetch';
 import { retryFetch, isTransient } from './retry-fetch.js';
 const fetchFn = globalThis.fetch ?? fetch;
 
