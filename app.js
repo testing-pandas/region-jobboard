@@ -7,8 +7,8 @@ import { convert } from 'html-to-text';
 import cron from 'node-cron';
 import crypto from 'node:crypto';
 import sax from 'sax';
-import fetch from 'node-fetch';
-import { retryFetch } from './retry-fetch.js';
+import http from 'node:http';
+import { retryFetch, isTransient } from './retry-fetch.js';
 
 // ========================================
 // ENVIRONMENT VARIABLES
@@ -97,6 +97,30 @@ const STATIC_TAG_LOOKUP = STATIC_TAG_SUGGESTIONS.reduce((acc, tag) => {
   return acc;
 }, {});
 
+// --- Fatal error handling & health heartbeat ---
+const fatalExit = (err, code = 1) => {
+  console.error('[fatal]', err?.stack || err);
+  setTimeout(() => process.exit(code), 200);
+};
+process.on('uncaughtException', fatalExit);
+process.on('unhandledRejection', fatalExit);
+
+let lastProgressTs = Date.now();
+const markProgress = () => (lastProgressTs = Date.now());
+
+const HEALTH_PORT = Number(process.env.HEALTH_PORT ?? 3001);
+const HEALTH_STALL_MS = Number(process.env.HEALTH_STALL_MS ?? 120000);
+http.createServer((req, res) => {
+  if (req.url === '/health') {
+    const healthy = Date.now() - lastProgressTs < HEALTH_STALL_MS;
+    res.statusCode = healthy ? 200 : 500;
+    res.end(healthy ? 'OK' : 'UNHEALTHY');
+  } else {
+    res.statusCode = 404;
+    res.end('NF');
+  }
+}).listen(HEALTH_PORT, () => console.log(`[health] :${HEALTH_PORT}`));
+
 const CITY_SUBDOMAINS = {
   'california': { label: 'California', aliases: ['california', 'ca', 'los angeles', 'san francisco', 'san diego', 'sacramento'] },
   'texas': { label: 'Texas', aliases: ['texas', 'tx', 'houston', 'dallas', 'austin', 'san antonio'] },
@@ -143,6 +167,7 @@ async function getJson(url, opts) {
     onRetry: ({ attempt, backoff, err }) =>
       console.warn(`[fetch] retry ${attempt} in ${backoff}ms: ${err.message}`)
   });
+  markProgress();
   return res.json();
 }
 
@@ -909,6 +934,7 @@ export async function processFeed() {
 
     const response = await fetch(FEED_URL);
     const stream = response.body;
+    markProgress();
 
     let matched = 0;
     let processed = 0;
@@ -1020,6 +1046,7 @@ export async function processFeed() {
         });
         currentItem = null;
         inRegion = false;
+        markProgress();
       }
     });
 
@@ -1031,6 +1058,7 @@ export async function processFeed() {
       stream.pipe(parser);
 
       parser.on('end', async () => {
+        markProgress();
         if (batch.length > 0) {
           console.log(`\nProcessing ${batch.length} matched jobs...`);
           const processedBatch = [];
@@ -1107,7 +1135,11 @@ export async function processFeed() {
     }
   } catch (error) {
     console.error('Feed processing error:', error.message);
-    throw error;
+    if (!isTransient(error)) {
+      fatalExit(error);
+    } else {
+      throw error;
+    }
   } finally {
     FEED_RUNNING = false;
   }
