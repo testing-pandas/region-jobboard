@@ -44,6 +44,13 @@ function formatPublicationDate(locale = 'en-US') {
   }
 }
 
+const TITLE_MIN_LENGTH = Number(process.env.TITLE_MIN_LENGTH || 8);
+const TITLE_MAX_LENGTH = Number(process.env.TITLE_MAX_LENGTH || 60);
+const TITLE_NOISE_PHRASES = [
+  'apply now','now hiring','hiring now','hiring immediately','great opportunity','urgent hire','join our team','immediate start','career opportunity','apply today','apply online','hurry up','click to apply'
+];
+const TITLE_ACRONYM_SET = new Set(['cdl','hvac','usa','it','qa']);
+
 // Keywords for profession matching (lowercase)
 const PROFESSION_KEYWORDS = (process.env.PROFESSION_KEYWORDS || 'driver, truck driver, delivery driver, van driver, lorry driver, courier, bus driver, taxi driver, chauffeur, forklift operator, warehouse operative, warehouse worker, warehouse associate, picker, packer, order picker, order packer, warehouse assistant, logistics worker, warehouse operative nights, warehouse loader, stock assistant, material handler, shipping clerk, receiving clerk, logistics assistant, dispatcher, labourer, general labourer, construction worker, builder, carpenter, joiner, mason, bricklayer, roofer, tiler, plasterer, painter, decorator, electrician, electrical technician, plumber, plumbing installer, welder, steel fixer, fabricator, pipefitter, sheet metal worker, mechanic, car mechanic, auto technician, maintenance mechanic, diesel mechanic, heavy vehicle mechanic, machine operator, cnc operator, cnc machinist, milling operator, turning operator, assembler, production worker, factory worker, manufacturing operative, production operative, assembly line worker, maintenance technician, hvac technician, air conditioning installer, refrigeration technician, boiler operator, installation technician, cable installer, electrical installer, fibre technician, telecom technician, rigger, crane operator, excavator operator, forklift driver, loader operator, heavy equipment operator, maintenance worker, groundskeeper, gardener, landscaper, tree surgeon, cleaner, industrial cleaner, housekeeper, janitor, sanitation worker, waste collector, recycling operative, window cleaner, kitchen porter, kitchen assistant, line cook, commis chef, cook, chef de partie, grill cook, dishwasher, food production operative, baker, butcher, fishmonger, laundry worker, textile operator, sewing machinist, dry cleaner, packhouse worker, farm worker, agricultural worker, fruit picker, vegetable picker, harvester, vineyard worker, dairy worker, ranch hand, stable hand, animal caretaker, pest control technician, pest exterminator, driver loader, refuse driver, street cleaner, road worker, asphalt worker, construction labourer, scaffolder, insulation installer, painter and decorator, flooring installer, tiling specialist, plastering worker, handyman, maintenance assistant, caretaker, security guard, doorman, bouncer, parking attendant, car wash attendant, valet driver, delivery rider, motorcycle courier, bike courier, postman, mail sorter, porter, mover, removal worker, warehouse packer, logistics operative, production line worker')
   .toLowerCase()
@@ -153,6 +160,52 @@ function splitRegionParts(value = '') {
     .split(/[,;/]/)
     .map(part => part.trim())
     .filter(Boolean);
+}
+
+function escapeRegExp(str = '') {
+  return String(str || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function standardizeTitle(title = '', { company = '', city = '', state = '' } = {}) {
+  let clean = String(title || '').replace(/\s+/g, ' ').trim();
+  if (!clean) return 'Job Opportunity';
+
+  const segments = clean.split(/[\-|–—:|›»•·]+/).map(s => s.trim()).filter(Boolean);
+  if (segments.length) clean = segments[0];
+
+  TITLE_NOISE_PHRASES.forEach(phrase => {
+    clean = clean.replace(new RegExp(`\\b${escapeRegExp(phrase)}\\b`, 'gi'), ' ');
+  });
+
+  [company, city, state].filter(Boolean).forEach(name => {
+    clean = clean.replace(new RegExp(`\\b${escapeRegExp(name)}\\b`, 'gi'), ' ');
+  });
+
+  clean = clean
+    .replace(/\b(?:apply|apply now|hiring|career|opportunity)\b/gi, ' ')
+    .replace(/[^a-z0-9\s\/&+]/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (clean.length > TITLE_MAX_LENGTH) {
+    clean = clean.slice(0, TITLE_MAX_LENGTH).trim();
+  }
+  if (clean.length < TITLE_MIN_LENGTH) {
+    return clean || 'Job Opportunity';
+  }
+
+  clean = clean
+    .split(' ')
+    .map(word => {
+      const lower = word.toLowerCase();
+      if (TITLE_ACRONYM_SET.has(lower)) return lower.toUpperCase();
+      if (word.length <= 2) return lower;
+      return lower.charAt(0).toUpperCase() + lower.slice(1);
+    })
+    .join(' ')
+    .replace(/\b(Ii|Ii)\b/g, 'II');
+
+  return clean || 'Job Opportunity';
 }
 
 async function getJson(url, opts) {
@@ -1026,8 +1079,14 @@ export async function processFeed() {
         matched++;
         const rawRegion = currentItem.region || { city: '', state: '', country: '' };
         const resolvedCity = resolveCitySlug(rawRegion);
+        const normalizedTitle = standardizeTitle(currentItem.title, {
+          company: currentItem.company,
+          city: resolvedCity?.name,
+          state: resolvedCity?.state
+        });
         batch.push({
           rawTitle: currentItem.title,
+          normalizedTitle,
           rawCompany: currentItem.company,
           rawDescription: currentItem.description,
           guid,
@@ -1083,7 +1142,7 @@ export async function processFeed() {
             processedBatch.push({
               guid: rawJob.guid,
               source: rawJob.source,
-              title: rawJob.rawTitle || 'Untitled',
+              title: rawJob.normalizedTitle || rawJob.rawTitle || 'Untitled',
               company: rawJob.rawCompany || '',
               description_html: html,
               description_short: truncateWords(short, 60),
@@ -1761,7 +1820,7 @@ app.get('/post-job', (req, res) => {
 app.post('/post-job', async (req, res) => {
   try {
     const {
-      title, company, url,
+      title: rawTitle, company, url,
       description = '', tags = '',
       employmentType = 'FULL_TIME',
       isRemote = 'no',
@@ -1771,9 +1830,11 @@ app.post('/post-job', async (req, res) => {
       salaryUnit = 'YEAR'
     } = req.body;
 
-    if (!title || !company || !url) {
+    if (!rawTitle || !company || !url) {
       return res.status(400).send('Missing required fields');
     }
+
+    const title = standardizeTitle(rawTitle, { company });
 
     const guid = `manual-${Date.now()}-${crypto.randomBytes(8).toString('hex')}`;
     const published_at = Math.floor(Date.now() / 1000);
