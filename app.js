@@ -7,6 +7,8 @@ import { convert } from 'html-to-text';
 import cron from 'node-cron';
 import crypto from 'node:crypto';
 import sax from 'sax';
+import fetch from 'node-fetch';
+import { Readable } from 'node:stream';
 import { retryFetch, isTransient } from './retry-fetch.js';
 const fetchFn = globalThis.fetch ?? fetch;
 
@@ -977,8 +979,11 @@ export async function processFeed() {
     console.log(`AI Processing: ${AI_PROCESS_LIMIT === 0 ? 'Unlimited' : `First ${AI_PROCESS_LIMIT} jobs`}`);
     console.log('Starting streaming XML parser...\n');
 
-    const response = await fetch(FEED_URL);
-    const stream = response.body;
+    const response = await fetchFn(FEED_URL);
+    if (!response.ok) throw new Error(`Feed HTTP ${response.status}`);
+    const stream = response.body?.pipe ? response.body : response.body ? Readable.fromWeb(response.body) : null;
+    if (!stream) throw new Error('Feed stream missing');
+    markProgress();
     markProgress();
 
     let matched = 0;
