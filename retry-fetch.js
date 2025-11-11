@@ -1,23 +1,34 @@
 // retry-fetch.js  (ESM)
-const { setTimeout: delay } = await import('node:timers/promises');
-
 export function isTransient(err) {
-  const m = String((err && err.message) || err);
-  return /premature close|ECONNRESET|ETIMEDOUT|EAI_AGAIN|UND_ERR|socket hang up|network/i.test(m);
+  const msg  = String(err?.message || err || '');
+  const code = err?.code || err?.cause?.code;
+  const name = err?.name;
+
+  // покриваємо і message, і code, і AbortError (timeout/abort)
+  if (code && [
+    'ERR_STREAM_PREMATURE_CLOSE',
+    'ECONNRESET', 'ETIMEDOUT', 'EAI_AGAIN', 'ENOTFOUND'
+  ].includes(code)) return true;
+
+  if (name === 'AbortError') return true;
+
+  if (/premature close|socket hang up|network|TLS|timeout/i.test(msg)) return true;
+
+  return false;
 }
 
 export async function retryFetch(fetchFn, url, opts = {}, cfg = {}) {
   const {
-    retries = Number(process.env.FETCH_RETRIES || 3),
+    retries = Number(process.env.FETCH_RETRIES || 10),
     baseDelayMs = Number(process.env.FETCH_BASE_DELAY_MS || 1000),
     timeoutMs = Number(process.env.FETCH_TIMEOUT_MS || 30000),
     onRetry = () => {},
   } = cfg;
 
   let attempt = 0;
-  // Use AbortController for per-attempt timeout
   while (true) {
     attempt += 1;
+
     const ac = new AbortController();
     const tm = setTimeout(() => ac.abort(new Error('Fetch timeout')), timeoutMs);
 
@@ -28,11 +39,14 @@ export async function retryFetch(fetchFn, url, opts = {}, cfg = {}) {
       return res;
     } catch (err) {
       clearTimeout(tm);
-      const canRetry = attempt <= retries && isTransient(err);
-      if (!canRetry) throw err;
+      const canRetry = attempt < retries && isTransient(err);
+      if (!canRetry) {
+        // КЛЮЧОВЕ: кидати далі, щоб верхній рівень завершив процес
+        throw err;
+      }
       const backoff = baseDelayMs * 2 ** (attempt - 1);
       onRetry({ attempt, backoff, err });
-      await delay(backoff);
+      await new Promise(r => setTimeout(r, backoff));
     }
   }
 }
