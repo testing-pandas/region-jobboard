@@ -1191,7 +1191,7 @@ export async function processFeed() {
     }
   } catch (error) {
     console.error('Feed processing error:', error.message);
-    if (!isTransient(error)) {
+    if (!error || !isTransient(error)) {
       fatalExit(error);
     } else {
       throw error;
