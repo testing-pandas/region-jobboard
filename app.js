@@ -106,6 +106,13 @@ const STATIC_TAG_LOOKUP = STATIC_TAG_SUGGESTIONS.reduce((acc, tag) => {
   return acc;
 }, {});
 
+const isTransientFetchError = (err) => {
+  if (!err) return false;
+  const msg = String(err.message || '').toLowerCase();
+  if (msg.includes('terminated') || msg.includes('premature close')) return true;
+  return isTransient(err);
+};
+
 // --- Fatal error handling & health heartbeat ---
 let started = false;
 let fatal = false;
@@ -216,6 +223,13 @@ async function getJson(url, opts) {
   });
   markProgress();
   return res.json();
+}
+
+async function fetchWithRetry(url, opts) {
+  return retryFetch(fetchFn, url, opts, {
+    onRetry: ({ attempt, backoff, err }) =>
+      console.warn(`[fetch-stream] retry ${attempt} in ${backoff}ms: ${err.message}`)
+  });
 }
 
 function configureCityMappings() {
@@ -979,7 +993,7 @@ export async function processFeed() {
     console.log(`AI Processing: ${AI_PROCESS_LIMIT === 0 ? 'Unlimited' : `First ${AI_PROCESS_LIMIT} jobs`}`);
     console.log('Starting streaming XML parser...\n');
 
-    const response = await fetchFn(FEED_URL);
+    const response = await fetchWithRetry(FEED_URL);
     if (!response.ok) throw new Error(`Feed HTTP ${response.status}`);
     const stream = response.body?.pipe ? response.body : response.body ? Readable.fromWeb(response.body) : null;
     if (!stream) throw new Error('Feed stream missing');
@@ -1191,7 +1205,7 @@ export async function processFeed() {
     }
   } catch (error) {
     console.error('Feed processing error:', error.message);
-    if (!error || !isTransient(error)) {
+    if (!error || !isTransientFetchError(error)) {
       fatalExit(error);
     } else {
       throw error;
