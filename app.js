@@ -17,7 +17,7 @@ const fetchFn = globalThis.fetch ?? fetch;
 // ========================================
 const PORT = Number(process.env.PORT || 3010);
 const SITE_URL = (process.env.SITE_URL || `http://localhost:${PORT}`).replace(/\/+$/,'');
-const SITE_NAME = process.env.SITE_NAME || 'Get a Work';
+const SITE_NAME = process.env.SITE_NAME || 'Jobs24 Today';
 const FAVICON_URL = process.env.FAVICON_URL || '';
 const SITE_LOGO = process.env.SITE_LOGO || '';
 const SITE_SAMEAS = process.env.SITE_SAMEAS || ''; // Comma-separated social URLs
@@ -70,7 +70,7 @@ const SITE_BASE_PARTS = (() => {
   }
 })();
 
-const CITY_BASE_DOMAIN = String(process.env.CITY_BASE_DOMAIN || 'get-a.work')
+const CITY_BASE_DOMAIN = String(process.env.CITY_BASE_DOMAIN || 'jobs24.today')
   .trim()
   .replace(/^https?:\/\//i, '')
   .replace(/:\d+$/, '')
