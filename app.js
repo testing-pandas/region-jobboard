@@ -133,7 +133,6 @@ const CITY_SUBDOMAINS = {
   'california': { label: 'California', aliases: ['california', 'ca', 'los angeles', 'san francisco', 'san diego', 'sacramento'] },
   'texas': { label: 'Texas', aliases: ['texas', 'tx', 'houston', 'dallas', 'austin', 'san antonio'] },
   'florida': { label: 'Florida', aliases: ['florida', 'fl', 'miami', 'orlando', 'tampa', 'jacksonville'] },
-  'new-york': { label: 'New York', aliases: ['new york', 'ny', 'new york city', 'nyc', 'buffalo', 'rochester'] },
   'pennsylvania': { label: 'Pennsylvania', aliases: ['pennsylvania', 'pa', 'philadelphia', 'pittsburgh', 'harrisburg'] },
   'illinois': { label: 'Illinois', aliases: ['illinois', 'il', 'chicago', 'springfield'] },
   'ohio': { label: 'Ohio', aliases: ['ohio', 'oh', 'columbus', 'cleveland', 'cincinnati'] },
