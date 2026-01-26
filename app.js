@@ -16,7 +16,7 @@ const fetchFn = globalThis.fetch ?? fetch;
 // ENVIRONMENT VARIABLES
 // ========================================
 const PORT = Number(process.env.PORT || 3010);
-const SITE_URL = (process.env.SITE_URL || `http://localhost:${PORT}`).replace(/\/+$/,'');
+const SITE_URL = (process.env.SITE_URL || `http://localhost:${PORT}`).replace(/\/+$/, '');
 const SITE_NAME = process.env.SITE_NAME || 'Jobs24 Today';
 const FAVICON_URL = process.env.FAVICON_URL || '';
 const SITE_LOGO = process.env.SITE_LOGO || '';
@@ -37,9 +37,10 @@ const PUBLICATION_DATE_OBJ = (() => {
   return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
 })();
 const PUBLICATION_DATE_ISO = PUBLICATION_DATE_OBJ.toISOString();
-function formatPublicationDate(locale = 'en-US') {
+function formatPublicationDate(locale = 'en-US', timestamp = null) {
   try {
-    return PUBLICATION_DATE_OBJ.toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' });
+    const date = timestamp ? new Date(timestamp * 1000) : PUBLICATION_DATE_OBJ;
+    return date.toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' });
   } catch {
     return PUBLICATION_DATE_INPUT;
   }
@@ -48,9 +49,9 @@ function formatPublicationDate(locale = 'en-US') {
 const TITLE_MIN_LENGTH = Number(process.env.TITLE_MIN_LENGTH || 8);
 const TITLE_MAX_LENGTH = Number(process.env.TITLE_MAX_LENGTH || 60);
 const TITLE_NOISE_PHRASES = [
-  'apply now','now hiring','hiring now','hiring immediately','great opportunity','urgent hire','join our team','immediate start','career opportunity','apply today','apply online','hurry up','click to apply'
+  'apply now', 'now hiring', 'hiring now', 'hiring immediately', 'great opportunity', 'urgent hire', 'join our team', 'immediate start', 'career opportunity', 'apply today', 'apply online', 'hurry up', 'click to apply'
 ];
-const TITLE_ACRONYM_SET = new Set(['cdl','hvac','usa','it','qa']);
+const TITLE_ACRONYM_SET = new Set(['cdl', 'hvac', 'usa', 'it', 'qa']);
 
 // Keywords for profession matching (lowercase)
 const PROFESSION_KEYWORDS = (process.env.PROFESSION_KEYWORDS || 'driver, truck driver, delivery driver, van driver, lorry driver, courier, bus driver, taxi driver, chauffeur, forklift operator, warehouse operative, warehouse worker, warehouse associate, picker, packer, order picker, order packer, warehouse assistant, logistics worker, warehouse operative nights, warehouse loader, stock assistant, material handler, shipping clerk, receiving clerk, logistics assistant, dispatcher, labourer, general labourer, construction worker, builder, carpenter, joiner, mason, bricklayer, roofer, tiler, plasterer, painter, decorator, electrician, electrical technician, plumber, plumbing installer, welder, steel fixer, fabricator, pipefitter, sheet metal worker, mechanic, car mechanic, auto technician, maintenance mechanic, diesel mechanic, heavy vehicle mechanic, machine operator, cnc operator, cnc machinist, milling operator, turning operator, assembler, production worker, factory worker, manufacturing operative, production operative, assembly line worker, maintenance technician, hvac technician, air conditioning installer, refrigeration technician, boiler operator, installation technician, cable installer, electrical installer, fibre technician, telecom technician, rigger, crane operator, excavator operator, forklift driver, loader operator, heavy equipment operator, maintenance worker, groundskeeper, gardener, landscaper, tree surgeon, cleaner, industrial cleaner, housekeeper, janitor, sanitation worker, waste collector, recycling operative, window cleaner, kitchen porter, kitchen assistant, line cook, commis chef, cook, chef de partie, grill cook, dishwasher, food production operative, baker, butcher, fishmonger, laundry worker, textile operator, sewing machinist, dry cleaner, packhouse worker, farm worker, agricultural worker, fruit picker, vegetable picker, harvester, vineyard worker, dairy worker, ranch hand, stable hand, animal caretaker, pest control technician, pest exterminator, driver loader, refuse driver, street cleaner, road worker, asphalt worker, construction labourer, scaffolder, insulation installer, painter and decorator, flooring installer, tiling specialist, plastering worker, handyman, maintenance assistant, caretaker, security guard, doorman, bouncer, parking attendant, car wash attendant, valet driver, delivery rider, motorcycle courier, bike courier, postman, mail sorter, porter, mover, removal worker, warehouse packer, logistics operative, production line worker')
@@ -698,7 +699,7 @@ function matchesProfession(title = '', company = '', description = '') {
 // Extract tags related to profession
 const PROFESSION_TAGS = {
   'Warehouse': [
-    'Warehouse','Warehouse Worker', 'Warehouse Associate', 'Warehouse Operative', 'General Laborer', 'Stocker', 'Picker', 'Packer', 'Order Picker', 'Loader', 'Unloader', 'Dock Worker', 'Forklift Operator', 'Lift Truck Operator', 'Material Handler', 'Shipping Clerk', 'Receiving Clerk', 'Inventory Control Specialist', 'Warehouse Supervisor', 'Warehouse Manager', 'Logistics Associate', 'Distribution Associate', 'Supply Chain Associate', 'Storeman', 'Storekeeper', 'Warehouse Handler', 'Pallet Jack Operator', 'Reach Truck Operator', 'Cycle Counter', 'Receiving Inspector'
+    'Warehouse', 'Warehouse Worker', 'Warehouse Associate', 'Warehouse Operative', 'General Laborer', 'Stocker', 'Picker', 'Packer', 'Order Picker', 'Loader', 'Unloader', 'Dock Worker', 'Forklift Operator', 'Lift Truck Operator', 'Material Handler', 'Shipping Clerk', 'Receiving Clerk', 'Inventory Control Specialist', 'Warehouse Supervisor', 'Warehouse Manager', 'Logistics Associate', 'Distribution Associate', 'Supply Chain Associate', 'Storeman', 'Storekeeper', 'Warehouse Handler', 'Pallet Jack Operator', 'Reach Truck Operator', 'Cycle Counter', 'Receiving Inspector'
   ],
   'truck driver': ['class 1', 'class a', 'cdl', 'long haul', 'regional', 'local', 'tanker', 'flatbed', 'otr', 'hazmat'],
   'software engineer': ['javascript', 'python', 'java', 'react', 'node', 'backend', 'frontend', 'full stack', 'devops'],
@@ -754,8 +755,8 @@ function parseMeta(textHTML = '', title = '') {
     const c = cMatch[0].toUpperCase();
     currency = (c === '€' || c === 'EUR' || c === 'EURO') ? 'EUR'
       : (c === '$' || c === 'USD') ? 'USD'
-      : (c === '£' || c === 'GBP') ? 'GBP'
-      : (c === 'CHF') ? 'CHF' : null;
+        : (c === '£' || c === 'GBP') ? 'GBP'
+          : (c === 'CHF') ? 'CHF' : null;
   }
   const range = text.match(/(\d{1,2}[.,]?\d{3,6})\s*[-–—bis]\s*(\d{1,2}[.,]?\d{3,6})/i);
   if (range) {
@@ -823,7 +824,7 @@ function inferJobLocations(html = '', title = '', siteUrl = SITE_URL) {
   const text = (convert(html || '', { wordwrap: 1000 }) + ' ' + (title || '')).toLowerCase();
 
   // Minimal city lexicon for DE context (safe). Extend as needed.
-  const citiesDE = ['berlin','hamburg','münchen','munchen','muenchen','köln','koeln','cologne','frankfurt','stuttgart','düsseldorf','duesseldorf','dortmund','essen','bremen','leipzig','dresden','hannover','nürnberg','nuernberg','duisburg','bochum'];
+  const citiesDE = ['berlin', 'hamburg', 'münchen', 'munchen', 'muenchen', 'köln', 'koeln', 'cologne', 'frankfurt', 'stuttgart', 'düsseldorf', 'duesseldorf', 'dortmund', 'essen', 'bremen', 'leipzig', 'dresden', 'hannover', 'nürnberg', 'nuernberg', 'duisburg', 'bochum'];
   let city = null;
   for (const c of citiesDE) {
     if (text.includes(c)) { city = c; break; }
@@ -1486,7 +1487,7 @@ ${faviconHtml}
 <link rel="alternate" type="application/rss+xml" title="RSS Feed" href="${ensureAbsoluteUrl(canonical('/feed.xml', activeSiteUrl), CITY_PROTOCOL || SITE_BASE_PARTS.protocol || 'https:')}"/>
 <!-- Open Graph -->
 <meta property="og:title" content="${escapeHtml(title || displaySiteName)}"/>
-<meta property="og:description" content="${cityCtx ? `Find roles in ${escapeHtml(cityCtx.label)}` : `Explore opportunities at ${escapeHtml(displaySiteName)}` }"/>
+<meta property="og:description" content="${cityCtx ? `Find roles in ${escapeHtml(cityCtx.label)}` : `Explore opportunities at ${escapeHtml(displaySiteName)}`}"/>
 <meta property="og:url" content="${canonicalUrl}"/>
 <meta property="og:type" content="website"/>
 ${SITE_LOGO ? `<meta property="og:image" content="${escapeHtml(SITE_LOGO)}"/>` : ''}
@@ -1545,11 +1546,11 @@ app.use((req, res, next) => {
     : ensureAbsoluteUrl(MAIN_SITE_URL, CITY_PROTOCOL || requestProtocol).replace(/\/+$/, '');
   const cityCtx = cityBase
     ? {
-        slug: cityBase.slug,
-        label: cityBase.label,
-        siteUrl: cityBase.siteUrl,
-        host: cleanHost
-      }
+      slug: cityBase.slug,
+      label: cityBase.label,
+      siteUrl: cityBase.siteUrl,
+      host: cleanHost
+    }
     : null;
 
   res.locals.cityCtx = cityCtx;
@@ -1590,14 +1591,13 @@ app.get('/', (req, res) => {
   const hasMore = rows.length === pageSize;
   const nextCursor = hasMore ? `${rows[rows.length - 1].published_at}-${rows[rows.length - 1].id}` : null;
 
-  const publicationDateDisplay = escapeHtml(formatPublicationDate('en-US'));
   const items = rows.map(r => `
 <li class="card">
   <h2><a href="/job/${r.slug}">${escapeHtml(r.title)}</a></h2>
   ${r.company ? `<div class="muted">${escapeHtml(r.company)}</div>` : ''}
   ${formatLocation(r) ? `<div class="muted small">${escapeHtml(formatLocation(r))}</div>` : ''}
   <p>${escapeHtml(r.description_short)}</p>
-  <div class="muted small">${publicationDateDisplay}</div>
+  <div class="muted small">${escapeHtml(formatPublicationDate('en-US', r.published_at))}</div>
 </li>`).join('');
 
   const cityLinkEntries = getCityLinkEntries();
@@ -1606,10 +1606,10 @@ app.get('/', (req, res) => {
   <h3>Browse states</h3>
   <div class="city-links-grid">
     ${cityLinkEntries.map(link => {
-      const isActive = (!cityCtx && link.slug === null) || (cityCtx && link.slug === cityCtx.slug);
-      const cls = `city-pill${isActive ? ' active' : ''}`;
-      return `<a class="${cls}" href="${escapeHtml(link.url)}">${escapeHtml(link.label)}</a>`;
-    }).join('')}
+    const isActive = (!cityCtx && link.slug === null) || (cityCtx && link.slug === cityCtx.slug);
+    const cls = `city-pill${isActive ? ' active' : ''}`;
+    return `<a class="${cls}" href="${escapeHtml(link.url)}">${escapeHtml(link.label)}</a>`;
+  }).join('')}
   </div>
 </section>` : '';
 
@@ -1705,14 +1705,13 @@ app.get('/search', (req, res) => {
     ? stmtSearchCity.all(cityCtx.slug, searchPattern, searchPattern)
     : stmtSearch.all(searchPattern, searchPattern);
 
-  const publicationDateDisplay = escapeHtml(formatPublicationDate('en-US'));
   const items = rows.map(r => `
 <li class="card">
   <h2><a href="/job/${r.slug}">${escapeHtml(r.title)}</a></h2>
   ${r.company ? `<div class="muted">${escapeHtml(r.company)}</div>` : ''}
   ${formatLocation(r) ? `<div class="muted small">${escapeHtml(formatLocation(r))}</div>` : ''}
   <p>${escapeHtml(r.description_short)}</p>
-  <div class="muted small">${publicationDateDisplay}</div>
+  <div class="muted small">${escapeHtml(formatPublicationDate('en-US', r.published_at))}</div>
 </li>`).join('');
 
   const breadcrumbs = [
@@ -1887,16 +1886,16 @@ app.post('/post-job', async (req, res) => {
       title,
       company,
       description_html: enrichedHtml,
-    description_short: finalShort,
-    url,
-    published_at,
-    slug,
-    city_slug: null,
-    city_name: null,
-    region_state: null,
-    region_country: null,
-    tags_csv: uniqNormTags(finalTags).join(', ')
-  });
+      description_short: finalShort,
+      url,
+      published_at,
+      slug,
+      city_slug: null,
+      city_name: null,
+      region_state: null,
+      region_country: null,
+      tags_csv: uniqNormTags(finalTags).join(', ')
+    });
 
     const inserted = stmtHasGuid.get(guid);
     if (inserted) {
@@ -1993,8 +1992,6 @@ app.get('/tag/:slug', (req, res) => {
   let nextCursor = null;
   let tagLabel = tag ? tag.name : staticSuggestion.label;
 
-  const publicationDateDisplay = escapeHtml(formatPublicationDate('en-US'));
-
   if (tag) {
     if (!cursor) {
       rows = cityCtx
@@ -2050,7 +2047,7 @@ app.get('/tag/:slug', (req, res) => {
   ${r.company ? `<div class="muted">${escapeHtml(r.company)}</div>` : ''}
   ${formatLocation(r) ? `<div class="muted small">${escapeHtml(formatLocation(r))}</div>` : ''}
   <p>${escapeHtml(r.description_short)}</p>
-  <div class="muted small">${publicationDateDisplay}</div>
+  <div class="muted small">${escapeHtml(formatPublicationDate('en-US', r.published_at))}</div>
 </li>`).join('');
 
   const pagerLinks = [];
@@ -2150,7 +2147,7 @@ app.get('/job/:slug', (req, res) => {
     }
   }
 
-  const publicationDateDisplay = escapeHtml(formatPublicationDate('en-US'));
+  const publicationDateDisplay = escapeHtml(formatPublicationDate('en-US', job.published_at));
   const token = crypto.createHmac('sha256', CLICK_SECRET).update(String(job.id)).digest('hex').slice(0, 16);
   const tags = (job.tags_csv || '').split(',').map(s => s.trim()).filter(Boolean);
   const tagsHtml = tags.length ? `<div class="tags">
@@ -2320,7 +2317,7 @@ app.get('/feed.xml', (req, res) => {
 // ========================================
 // LEGAL PAGES (EN)
 // ========================================
-const LAST_UPDATED = new Date().toISOString().slice(0,10); // YYYY-MM-DD
+const LAST_UPDATED = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 
 app.get('/privacy', (req, res) => {
   const cityCtx = res.locals.cityCtx;
